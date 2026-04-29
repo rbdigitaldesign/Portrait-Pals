@@ -113,7 +113,7 @@ function ParentTimeline({ user, portraits, childrenList, logout }) {
     ? childPortraits.filter((p) => p.taggedIds.includes(selectedFriendId))
     : childPortraits;
 
-  const avatarUrl = childPortraits[0]?.photoUrl ?? null;
+  const avatarUrl = activeChild.photoUrl ?? childPortraits[0]?.photoUrl ?? null;
 
   function playTimeline() {
     if (displayPortraits.length === 0) return;
