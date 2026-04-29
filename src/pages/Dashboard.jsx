@@ -121,7 +121,7 @@ function ParentTimeline({ user, portraits, childrenList, logout }) {
     <div className="min-h-screen bg-amber-50 pb-28">
 
       {/* ── Header ── */}
-      <div className="bg-white shadow-sm shadow-indigo-50 px-5 pt-safe pt-4 pb-4 sticky top-0 z-20">
+      <div className="bg-white shadow-md shadow-indigo-100 px-5 pt-safe pt-4 pb-5 sticky top-0 z-20 rounded-b-3xl">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-black text-indigo-900 leading-tight">{activeChild.name}</h1>
@@ -373,18 +373,18 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, log
   return (
     <div className="min-h-screen bg-amber-50 pb-28">
       {/* Header */}
-      <div className="bg-white shadow-sm shadow-indigo-50 px-5 pt-safe pt-4 pb-4 sticky top-0 z-20">
+      <div className="bg-white shadow-md shadow-indigo-100 px-5 pt-safe pt-4 pb-5 sticky top-0 z-20 rounded-b-3xl">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <div>
             <h1 className="text-2xl font-black text-indigo-900 leading-tight">Portrait Pals</h1>
-            <p className="text-xs font-extrabold text-rose-500 mt-0.5">Educator</p>
+            <p className="text-xs font-extrabold text-rose-500 uppercase tracking-widest mt-0.5">Educator View</p>
           </div>
           <button
             onClick={logout}
-            className="flex items-center gap-1.5 bg-amber-50 rounded-2xl px-3.5 py-2.5 text-indigo-400 font-bold text-sm active:scale-95 transition-transform"
+            className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center text-indigo-400 active:scale-90 transition-transform"
+            aria-label="Sign out"
           >
-            <LogOut size={15} />
-            Sign out
+            <LogOut size={18} />
           </button>
         </div>
       </div>
@@ -464,14 +464,16 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, log
         )}
       </div>
 
-      {/* FAB */}
-      <button
-        onClick={() => navigate('/capture')}
-        className="fixed bottom-6 right-5 w-16 h-16 bg-rose-500 rounded-3xl flex items-center justify-center shadow-2xl shadow-rose-300 active:scale-95 transition-transform z-30"
-        aria-label="Capture portrait"
-      >
-        <Camera size={28} className="text-white" />
-      </button>
+      {/* Sticky bottom: Capture Portrait */}
+      <div className="fixed bottom-0 left-0 right-0 px-5 pb-safe pb-6 pt-4 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent">
+        <button
+          onClick={() => navigate('/capture')}
+          className="w-full bg-rose-500 text-white font-black text-lg rounded-2xl py-4 flex items-center justify-center gap-2.5 shadow-xl shadow-rose-200 active:scale-95 transition-transform"
+        >
+          <Camera size={20} />
+          Capture Portrait
+        </button>
+      </div>
 
       {showAddChild && (
         <AddChildModal
