@@ -429,17 +429,19 @@ export default function Capture() {
                   placeholder="First name"
                   autoFocus
                   required
-                  className="w-full bg-amber-50 rounded-xl px-3 py-2.5 text-indigo-900 font-semibold text-sm outline-none focus:ring-2 focus:ring-rose-400 placeholder:text-indigo-300 mb-2"
+                  className={`w-full bg-amber-50 rounded-xl px-3 py-2.5 text-indigo-900 font-semibold text-sm outline-none focus:ring-2 focus:ring-rose-400 placeholder:text-indigo-300 ${user?.role === 'educator' ? 'mb-2' : 'mb-3'}`}
                 />
-                <select
-                  value={newChildRoom}
-                  onChange={(e) => setNewChildRoom(e.target.value)}
-                  className="w-full bg-amber-50 rounded-xl px-3 py-2.5 text-indigo-900 font-semibold text-sm outline-none focus:ring-2 focus:ring-rose-400 appearance-none mb-3"
-                >
-                  {rooms.map((r) => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
-                </select>
+                {user?.role === 'educator' && (
+                  <select
+                    value={newChildRoom}
+                    onChange={(e) => setNewChildRoom(e.target.value)}
+                    className="w-full bg-amber-50 rounded-xl px-3 py-2.5 text-indigo-900 font-semibold text-sm outline-none focus:ring-2 focus:ring-rose-400 appearance-none mb-3"
+                  >
+                    {rooms.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                )}
                 <button
                   type="submit"
                   className="w-full bg-rose-500 text-white font-black text-sm rounded-xl py-2.5 active:scale-95 transition-transform"
