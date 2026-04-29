@@ -57,8 +57,8 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick }) {
         <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
           <h3 className="font-black text-indigo-900 text-base leading-tight">{label}</h3>
           <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
-            <span className="bg-amber-100 text-amber-600 font-extrabold text-[10px] px-2.5 py-1 rounded-full">
-              School
+            <span className={`font-extrabold text-[10px] px-2.5 py-1 rounded-full ${portrait.source === 'parent' ? 'bg-teal-100 text-teal-600' : 'bg-amber-100 text-amber-600'}`}>
+              {portrait.source === 'parent' ? 'Family' : 'School'}
             </span>
             <span className="bg-indigo-600 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-full">
               {dateStr}
@@ -99,9 +99,9 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
 
   const activeChild = childrenList.find((c) => c.id === activeId);
 
-  // All portraits featuring the active child, newest first
+  // School portraits tagging this child + this parent's own captures tagging this child
   const childPortraits = portraits
-    .filter((p) => p.taggedIds.includes(activeId))
+    .filter((p) => p.taggedIds.includes(activeId) && (p.source === 'school' || p.source === 'parent'))
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   // Unique friends who appear alongside the active child
@@ -430,6 +430,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, log
   );
 
   const filteredPortraits = portraits.filter((p) => {
+    if (p.source !== 'school') return false;
     const inView = p.taggedIds.some((id) => visibleChildren.some((c) => c.id === id));
     if (!inView) return false;
     if (selectedChildId) return p.taggedIds.includes(selectedChildId);
