@@ -272,7 +272,7 @@ export default function Capture() {
   /* ── Render ── */
 
   return (
-    <div className="min-h-screen bg-indigo-950 flex flex-col">
+    <div className="h-dvh bg-indigo-950 flex flex-col overflow-hidden">
 
       {/* ── Viewfinder / preview area ── */}
       <div
@@ -374,7 +374,7 @@ export default function Capture() {
 
       {/* ── Post-capture form ── */}
       {captured && (
-        <div className="bg-amber-50 rounded-t-3xl flex-1 overflow-y-auto px-5 pt-5 pb-10">
+        <div className="bg-amber-50 rounded-t-3xl flex-1 min-h-0 overflow-y-auto px-5 pt-5 pb-10">
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-black text-xl text-indigo-900">New Portrait</h2>
             <button
