@@ -89,11 +89,13 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick }) {
   );
 }
 
-function ParentTimeline({ user, portraits, childrenList, logout }) {
+function ParentTimeline({ user, portraits, childrenList, logout, addChild, addChildToSession }) {
   const navigate       = useNavigate();
+  const { rooms }      = useApp();
   const parentChildren = childrenList.filter((c) => (user.childIds ?? []).includes(c.id));
-  const [activeId,        setActiveId]        = useState(parentChildren[0]?.id ?? null);
+  const [activeId,         setActiveId]         = useState(parentChildren[0]?.id ?? null);
   const [selectedFriendId, setSelectedFriendId] = useState(null);
+  const [showAddChild,     setShowAddChild]      = useState(false);
 
   const activeChild = childrenList.find((c) => c.id === activeId);
 
@@ -156,24 +158,28 @@ function ParentTimeline({ user, portraits, childrenList, logout }) {
           </button>
         </div>
 
-        {/* Child switcher — only shown when parent has multiple children */}
-        {parentChildren.length > 1 && (
-          <div className="flex gap-2 mt-3 overflow-x-auto scrollbar-none">
-            {parentChildren.map((child) => (
-              <button
-                key={child.id}
-                onClick={() => setActiveId(child.id)}
-                className={`flex-shrink-0 px-4 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
-                  activeId === child.id
-                    ? 'bg-teal-500 text-white shadow-md'
-                    : 'bg-amber-50 text-indigo-600'
-                }`}
-              >
-                {child.name}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Child switcher + add child */}
+        <div className="flex gap-2 mt-3 overflow-x-auto scrollbar-none">
+          {parentChildren.map((child) => (
+            <button
+              key={child.id}
+              onClick={() => setActiveId(child.id)}
+              className={`flex-shrink-0 px-4 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
+                activeId === child.id
+                  ? 'bg-teal-500 text-white shadow-md'
+                  : 'bg-amber-50 text-indigo-600'
+              }`}
+            >
+              {child.name}
+            </button>
+          ))}
+          <button
+            onClick={() => setShowAddChild(true)}
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl font-bold text-sm text-teal-500 bg-teal-50 active:scale-95 transition-transform"
+          >
+            <Plus size={15} /> Add Child
+          </button>
+        </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pt-5">
@@ -277,6 +283,19 @@ function ParentTimeline({ user, portraits, childrenList, logout }) {
           </div>
         )}
       </div>
+
+      {/* Add child modal */}
+      {showAddChild && (
+        <AddChildModal
+          rooms={rooms}
+          onClose={() => setShowAddChild(false)}
+          onAdd={(child) => {
+            addChild(child);
+            addChildToSession(child.id);
+            setActiveId(child.id);
+          }}
+        />
+      )}
 
       {/* ── Sticky: Add Memory ── */}
       <div className="fixed bottom-0 left-0 right-0 px-5 pb-safe pb-6 pt-4 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent">
@@ -551,7 +570,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, log
    ═══════════════════════════════════════════════════════════════════════ */
 
 export default function Dashboard() {
-  const { user, logout }                             = useAuth();
+  const { user, logout, addChildToSession }          = useAuth();
   const { portraits, childrenList, rooms, addChild } = useApp();
 
   if (user?.role === 'parent') {
@@ -561,6 +580,8 @@ export default function Dashboard() {
         portraits={portraits}
         childrenList={childrenList}
         logout={logout}
+        addChild={addChild}
+        addChildToSession={addChildToSession}
       />
     );
   }
