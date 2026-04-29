@@ -30,8 +30,6 @@ function PhotoHero() {
         </radialGradient>
       </defs>
 
-      {/* Rainbow wash background */}
-      <rect x="0" y="0" width="380" height="230" fill="url(#rainbowWash)" />
 
       {/* ── Tiny rainbow arc — subtle, behind camera ── */}
       {[
