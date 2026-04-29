@@ -8,6 +8,7 @@ import {
   Minimize2,
   Play,
   Pause,
+  Download,
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 
@@ -19,6 +20,28 @@ function formatDate(iso) {
     month: 'long',
     year: 'numeric',
   });
+}
+
+function ageAtDate(birthdate, portraitDate) {
+  if (!birthdate) return null;
+  const birth = new Date(birthdate);
+  const photo = new Date(portraitDate);
+  let years  = photo.getFullYear() - birth.getFullYear();
+  let months = photo.getMonth()    - birth.getMonth();
+  if (months < 0) { years--; months += 12; }
+  if (years < 0)  return null;
+  if (years === 0) return `${months}m`;
+  if (months === 0) return `${years}y`;
+  return `${years}y ${months}m`;
+}
+
+function downloadPhoto(url, name) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${name.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.jpg`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 /* ─── Progress dots ───────────────────────────────────────────────────── */
@@ -103,6 +126,10 @@ export default function Slideshow() {
     .filter(Boolean);
   const names   = tagged.map((c) => c.name).join(' & ') || 'Friendship Portrait';
   const dateStr = formatDate(portrait.date);
+  const taggedWithAges = tagged.map((c) => {
+    const age = ageAtDate(c.birthdate, portrait.date);
+    return age ? `${c.name} (${age})` : c.name;
+  }).join(' & ') || 'Friendship Portrait';
 
   /* ── Immersive mode ── */
 
@@ -166,8 +193,8 @@ export default function Slideshow() {
             </p>
           ) : null}
 
-          {/* Play / pause */}
-          <div className="flex justify-center mt-3">
+          {/* Play / pause + download */}
+          <div className="flex justify-center items-center gap-4 mt-3">
             <button
               onClick={() => setPlaying((p) => !p)}
               className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm"
@@ -175,6 +202,13 @@ export default function Slideshow() {
               {playing
                 ? <Pause size={14} className="text-white" />
                 : <Play  size={14} className="text-white" />}
+            </button>
+            <button
+              onClick={() => downloadPhoto(portrait.photoUrl, names)}
+              className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm"
+              aria-label="Download photo"
+            >
+              <Download size={14} className="text-white" />
             </button>
           </div>
         </div>
@@ -234,8 +268,19 @@ export default function Slideshow() {
 
       {/* Metadata card */}
       <div className="flex-1 bg-amber-50 rounded-t-3xl mt-4 px-5 pt-6 pb-10 overflow-y-auto">
-        <h2 className="font-black text-2xl text-indigo-900 leading-tight">{names}</h2>
-        <p className="text-rose-500 font-bold text-sm mt-1">{dateStr}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="font-black text-2xl text-indigo-900 leading-tight">{taggedWithAges}</h2>
+            <p className="text-rose-500 font-bold text-sm mt-1">{dateStr}</p>
+          </div>
+          <button
+            onClick={() => downloadPhoto(portrait.photoUrl, names)}
+            className="flex-shrink-0 w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-md text-indigo-400 active:scale-90 transition-transform mt-0.5"
+            aria-label="Download photo"
+          >
+            <Download size={17} />
+          </button>
+        </div>
 
         {portrait.notes ? (
           <p className="text-indigo-700 text-sm font-medium mt-3 leading-relaxed">

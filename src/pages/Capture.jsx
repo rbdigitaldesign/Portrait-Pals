@@ -165,6 +165,7 @@ export default function Capture() {
   const [showNewChild,  setShowNewChild]  = useState(false);
   const [newChildName,  setNewChildName]  = useState('');
   const [newChildRoom,  setNewChildRoom]  = useState(rooms[0]?.id ?? '');
+  const [saved,         setSaved]         = useState(false);
 
   /* ── Camera lifecycle ── */
 
@@ -266,13 +267,27 @@ export default function Capture() {
       source:    user?.role === 'parent' ? 'parent' : 'school',
     });
     setSaving(false);
-    navigate('/dashboard');
+    setSaved(true);
+    setTimeout(() => navigate('/dashboard'), 1800);
   }
 
   /* ── Render ── */
 
   return (
     <div className="h-dvh bg-indigo-950 flex flex-col overflow-hidden">
+
+      {/* ── Saved toast ── */}
+      {saved && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <div className="bg-indigo-900/95 backdrop-blur-sm text-white rounded-3xl px-10 py-7 text-center shadow-2xl">
+            <div className="w-14 h-14 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Check size={28} className="text-white" strokeWidth={3} />
+            </div>
+            <p className="font-black text-xl">Saved!</p>
+            <p className="text-indigo-300 font-semibold text-sm mt-1">Added to timeline</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Viewfinder / preview area ── */}
       <div

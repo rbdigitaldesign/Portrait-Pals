@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, LogOut, Plus, X, Users, Play } from 'lucide-react';
+import { Camera, LogOut, Plus, X, Users, Play, Pencil } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 
@@ -23,6 +23,62 @@ function formatDateShort(iso) {
   return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
+function ageAtDate(birthdate, portraitDate) {
+  if (!birthdate) return null;
+  const birth = new Date(birthdate);
+  const photo = new Date(portraitDate);
+  let years  = photo.getFullYear() - birth.getFullYear();
+  let months = photo.getMonth()    - birth.getMonth();
+  if (months < 0) { years--; months += 12; }
+  if (years < 0)  return null;
+  if (years === 0) return `${months}m`;
+  if (months === 0) return `${years}y`;
+  return `${years}y ${months}m`;
+}
+
+function compressProfilePhoto(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 400;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > MAX || h > MAX) {
+        const ratio = Math.min(MAX / w, MAX / h);
+        w = Math.round(w * ratio); h = Math.round(h * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.src = url;
+  });
+}
+
+function useLongPress(onLongPress, delay = 600) {
+  const timer  = useRef(null);
+  const fired  = useRef(false);
+
+  function start(e) {
+    if (e.type === 'touchstart') e.preventDefault();
+    fired.current = false;
+    timer.current = setTimeout(() => { fired.current = true; onLongPress(); }, delay);
+  }
+  function cancel() { clearTimeout(timer.current); }
+
+  return {
+    onMouseDown:  start,
+    onMouseUp:    cancel,
+    onMouseLeave: cancel,
+    onTouchStart: start,
+    onTouchEnd:   cancel,
+    onTouchMove:  cancel,
+    onClick: (e) => { if (fired.current) { e.stopPropagation(); e.preventDefault(); } },
+  };
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    PARENT TIMELINE
    ═══════════════════════════════════════════════════════════════════════ */
@@ -37,6 +93,8 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick }) {
     ? `With ${friends.map((f) => f.name).join(' & ')}`
     : 'A special moment';
   const dateStr = formatDateShort(portrait.date);
+  const activeChild = childrenList.find((c) => c.id === activeChildId);
+  const age     = ageAtDate(activeChild?.birthdate, portrait.date);
 
   return (
     <div className="flex gap-3">
@@ -57,6 +115,11 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick }) {
         <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
           <h3 className="font-black text-indigo-900 text-base leading-tight">{label}</h3>
           <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+            {age && (
+              <span className="bg-indigo-100 text-indigo-500 font-extrabold text-[10px] px-2.5 py-1 rounded-full">
+                {age}
+              </span>
+            )}
             <span className={`font-extrabold text-[10px] px-2.5 py-1 rounded-full ${portrait.source === 'parent' ? 'bg-teal-100 text-teal-600' : 'bg-amber-100 text-amber-600'}`}>
               {portrait.source === 'parent' ? 'Family' : 'School'}
             </span>
@@ -89,13 +152,14 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick }) {
   );
 }
 
-function ParentTimeline({ user, portraits, childrenList, logout, addChild, addChildToSession }) {
+function ParentTimeline({ user, portraits, childrenList, logout, addChild, addChildToSession, updateChild }) {
   const navigate       = useNavigate();
   const { rooms }      = useApp();
   const parentChildren = childrenList.filter((c) => (user.childIds ?? []).includes(c.id));
   const [activeId,         setActiveId]         = useState(parentChildren[0]?.id ?? null);
   const [selectedFriendId, setSelectedFriendId] = useState(null);
   const [showAddChild,     setShowAddChild]      = useState(false);
+  const [editingChild,     setEditingChild]      = useState(null);
 
   const activeChild = childrenList.find((c) => c.id === activeId);
 
@@ -161,17 +225,13 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
         {/* Child switcher + add child */}
         <div className="flex gap-2 mt-3 overflow-x-auto scrollbar-none">
           {parentChildren.map((child) => (
-            <button
+            <ChildPill
               key={child.id}
+              child={child}
+              active={activeId === child.id}
               onClick={() => setActiveId(child.id)}
-              className={`flex-shrink-0 px-4 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
-                activeId === child.id
-                  ? 'bg-teal-500 text-white shadow-md'
-                  : 'bg-amber-50 text-indigo-600'
-              }`}
-            >
-              {child.name}
-            </button>
+              onLongPress={() => setEditingChild(child)}
+            />
           ))}
           <button
             onClick={() => setShowAddChild(true)}
@@ -286,7 +346,6 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
         )}
       </div>
 
-      {/* Add child modal */}
       {showAddChild && (
         <AddChildModal
           rooms={rooms}
@@ -296,6 +355,15 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
             addChildToSession(child.id);
             setActiveId(child.id);
           }}
+        />
+      )}
+
+      {editingChild && (
+        <EditChildModal
+          child={editingChild}
+          rooms={rooms}
+          onClose={() => setEditingChild(null)}
+          onSave={(updates) => { updateChild(editingChild.id, updates); setEditingChild(null); }}
         />
       )}
 
@@ -317,17 +385,24 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
    EDUCATOR DASHBOARD
    ═══════════════════════════════════════════════════════════════════════ */
 
-function ChildChip({ child, active, onClick }) {
+function ChildChip({ child, active, onClick, onLongPress }) {
+  const lp = useLongPress(onLongPress ?? (() => {}));
   return (
-    <button onClick={onClick} className="flex flex-col items-center gap-1.5 flex-shrink-0">
+    <button
+      {...lp}
+      onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
+      className="flex flex-col items-center gap-1.5 flex-shrink-0 select-none"
+    >
       <div
-        className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-base shadow-md transition-all ${
+        className={`w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center text-white font-black text-base shadow-md transition-all ${
           active
             ? 'bg-rose-500 ring-4 ring-offset-2 ring-offset-amber-50 ring-rose-300'
             : 'bg-indigo-200'
         }`}
       >
-        {initials(child.name)}
+        {child.photoUrl
+          ? <img src={child.photoUrl} alt={child.name} className="w-full h-full object-cover" />
+          : initials(child.name)}
       </div>
       <span className="text-xs font-bold text-indigo-700 w-16 text-center leading-tight">
         {child.name}
@@ -360,15 +435,126 @@ function PortraitCard({ portrait, childrenList, onClick }) {
   );
 }
 
-function AddChildModal({ rooms, onClose, onAdd }) {
-  const [name,   setName]   = useState('');
-  const [roomId, setRoomId] = useState(rooms[0]?.id ?? '');
+/* ─── ChildPill (parent timeline switcher with long-press) ─────────────── */
+
+function ChildPill({ child, active, onClick, onLongPress }) {
+  const lp = useLongPress(onLongPress ?? (() => {}));
+  return (
+    <button
+      {...lp}
+      onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
+      className={`flex-shrink-0 px-4 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 select-none ${
+        active ? 'bg-teal-500 text-white shadow-md' : 'bg-amber-50 text-indigo-600'
+      }`}
+    >
+      {child.name}
+    </button>
+  );
+}
+
+/* ─── EditChildModal ────────────────────────────────────────────────────── */
+
+function EditChildModal({ child, rooms, onClose, onSave }) {
+  const [name,      setName]      = useState(child.name);
+  const [birthdate, setBirthdate] = useState(child.birthdate ?? '');
+  const [photoUrl,  setPhotoUrl]  = useState(child.photoUrl  ?? '');
+  const [preview,   setPreview]   = useState(child.photoUrl  ?? null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+
+  async function handlePhotoFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const compressed = await compressProfilePhoto(file);
+    setPhotoUrl(compressed);
+    setPreview(compressed);
+    setUploading(false);
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    onAdd({ id: `c${Date.now()}`, name: trimmed, roomId });
+    onSave({
+      name:      trimmed,
+      birthdate: birthdate || undefined,
+      photoUrl:  photoUrl  || undefined,
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 bg-indigo-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center px-4 pb-6">
+      <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-black text-xl text-indigo-900">Edit Profile</h2>
+          <button onClick={onClose} className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center text-indigo-400">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Photo picker */}
+        <div className="flex flex-col items-center mb-5">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="relative w-20 h-20 rounded-full overflow-hidden bg-indigo-100 ring-4 ring-indigo-100 active:scale-95 transition-transform"
+          >
+            {preview
+              ? <img src={preview} alt={name} className="w-full h-full object-cover" />
+              : <span className="font-black text-2xl text-indigo-300">{initials(name)}</span>}
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
+              <Pencil size={18} className="text-white" />
+            </div>
+          </button>
+          <p className="text-xs text-indigo-400 font-semibold mt-2">
+            {uploading ? 'Uploading…' : 'Tap to change photo'}
+          </p>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoFile} />
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">Name</label>
+            <input
+              type="text" value={name} onChange={(e) => setName(e.target.value)} required
+              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
+              Date of birth <span className="normal-case font-semibold">(optional)</span>
+            </label>
+            <input
+              type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400"
+            />
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-rose-500 text-white font-black text-base rounded-2xl py-4 shadow-lg shadow-rose-200 active:scale-95 transition-transform mt-2"
+          >
+            Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ─── AddChildModal ─────────────────────────────────────────────────────── */
+
+function AddChildModal({ rooms, onClose, onAdd }) {
+  const [name,      setName]      = useState('');
+  const [birthdate, setBirthdate] = useState('');
+  const [roomId,    setRoomId]    = useState(rooms[0]?.id ?? '');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    onAdd({ id: `c${Date.now()}`, name: trimmed, birthdate: birthdate || undefined, roomId });
     onClose();
   }
 
@@ -383,36 +569,33 @@ function AddChildModal({ rooms, onClose, onAdd }) {
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
-              First name
-            </label>
+            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">First name</label>
             <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Child's first name"
-              required
+              type="text" value={name} onChange={(e) => setName(e.target.value)}
+              placeholder="Child's first name" required
               className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400 placeholder:text-indigo-300"
             />
           </div>
           <div>
             <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
-              Room
+              Date of birth <span className="normal-case font-semibold">(optional)</span>
             </label>
+            <input
+              type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">Room</label>
             <select
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
+              value={roomId} onChange={(e) => setRoomId(e.target.value)}
               className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400 appearance-none"
             >
-              {rooms.map((r) => (
-                <option key={r.id} value={r.id}>{r.name}</option>
-              ))}
+              {rooms.map((r) => (<option key={r.id} value={r.id}>{r.name}</option>))}
             </select>
           </div>
-          <button
-            type="submit"
-            className="w-full bg-rose-500 text-white font-black text-base rounded-2xl py-4 shadow-lg shadow-rose-200 active:scale-95 transition-transform mt-2"
-          >
+          <button type="submit" className="w-full bg-rose-500 text-white font-black text-base rounded-2xl py-4 shadow-lg shadow-rose-200 active:scale-95 transition-transform mt-2">
             Add Child
           </button>
         </form>
@@ -421,11 +604,12 @@ function AddChildModal({ rooms, onClose, onAdd }) {
   );
 }
 
-function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, logout }) {
+function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, updateChild, logout }) {
   const navigate = useNavigate();
   const [selectedRoom,    setSelectedRoom]    = useState('all');
   const [selectedChildId, setSelectedChildId] = useState(null);
   const [showAddChild,    setShowAddChild]    = useState(false);
+  const [editingChild,    setEditingChild]    = useState(null);
 
   const visibleChildren = childrenList.filter(
     (c) => selectedRoom === 'all' || c.roomId === selectedRoom
@@ -500,6 +684,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, log
               child={child}
               active={!selectedChildId || selectedChildId === child.id}
               onClick={() => setSelectedChildId((prev) => (prev === child.id ? null : child.id))}
+              onLongPress={() => setEditingChild(child)}
             />
           ))}
           <button
@@ -558,10 +743,15 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, log
       </div>
 
       {showAddChild && (
-        <AddChildModal
+        <AddChildModal rooms={rooms} onClose={() => setShowAddChild(false)} onAdd={addChild} />
+      )}
+
+      {editingChild && (
+        <EditChildModal
+          child={editingChild}
           rooms={rooms}
-          onClose={() => setShowAddChild(false)}
-          onAdd={addChild}
+          onClose={() => setEditingChild(null)}
+          onSave={(updates) => { updateChild(editingChild.id, updates); setEditingChild(null); }}
         />
       )}
     </div>
@@ -574,7 +764,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, log
 
 export default function Dashboard() {
   const { user, logout, addChildToSession }          = useAuth();
-  const { portraits, childrenList, rooms, addChild } = useApp();
+  const { portraits, childrenList, rooms, addChild, updateChild } = useApp();
 
   if (user?.role === 'parent') {
     return (
@@ -585,6 +775,7 @@ export default function Dashboard() {
         logout={logout}
         addChild={addChild}
         addChildToSession={addChildToSession}
+        updateChild={updateChild}
       />
     );
   }
@@ -596,6 +787,7 @@ export default function Dashboard() {
       childrenList={childrenList}
       rooms={rooms}
       addChild={addChild}
+      updateChild={updateChild}
       logout={logout}
     />
   );
