@@ -340,7 +340,7 @@ export default function Capture() {
 
       {/* ── Shutter controls ── */}
       {!captured && !cameraError && (
-        <div className="flex items-center justify-center gap-8 py-5 bg-indigo-950">
+        <div className="flex items-center justify-center gap-8 pt-4 bg-indigo-950 flex-shrink-0" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}>
           <button
             onClick={() => fileInputRef.current?.click()}
             className="w-12 h-12 bg-white/15 rounded-2xl flex items-center justify-center text-white active:scale-90 transition-transform"
