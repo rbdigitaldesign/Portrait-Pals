@@ -227,12 +227,14 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
                     onClick={() => toggleFriend(friend.id)}
                     className="flex flex-col items-center gap-1.5 flex-shrink-0"
                   >
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-black text-base shadow-md transition-all ${
+                    <div className={`w-14 h-14 rounded-full overflow-hidden flex items-center justify-center text-white font-black text-base shadow-md transition-all ${
                       active
                         ? 'bg-teal-500 ring-4 ring-offset-2 ring-offset-amber-50 ring-teal-300'
                         : 'bg-indigo-200'
                     }`}>
-                      {initials(friend.name)}
+                      {friend.photoUrl
+                        ? <img src={friend.photoUrl} alt={friend.name} className="w-full h-full object-cover" />
+                        : initials(friend.name)}
                     </div>
                     <span className={`text-xs font-bold w-16 text-center leading-tight ${active ? 'text-teal-600' : 'text-indigo-500'}`}>
                       {friend.name}
