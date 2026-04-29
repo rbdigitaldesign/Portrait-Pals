@@ -13,7 +13,7 @@ const DEMO_ACCOUNTS = [
 
 function PhotoHero() {
   return (
-    <svg viewBox="0 0 380 230" className="w-full" aria-hidden="true">
+    <svg viewBox="0 -25 380 255" className="w-full" aria-hidden="true">
       <defs>
         <filter id="pshadow">
           <feDropShadow dx="1" dy="3" stdDeviation="5" floodOpacity="0.18" />
