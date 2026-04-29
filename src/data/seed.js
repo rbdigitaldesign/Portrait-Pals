@@ -1,6 +1,6 @@
 // Bump this string whenever seed portraits or children change.
 // The app will clear localStorage and reload fresh seed data on next visit.
-export const SEED_VERSION = 'v5';
+export const SEED_VERSION = 'v6';
 
 export const ROOMS = [
   { id: "baby-toddler", name: "Baby/Toddler Room" },
@@ -81,38 +81,6 @@ export const SEED_PORTRAITS = [
     date: "2024-01-27",
     notes: "Jake cradling baby Maggie on the carpet — she's already smiling up at him.",
     photoUrl: "/images/jake-maggie-cuddle-carpet.jpg",
-    source: "school",
-  },
-  {
-    id: "p1",
-    taggedIds: ["c4", "c8"],
-    date: "2025-12-31",
-    notes: "Mia and Jake sharing a festive morning building a big block tower together.",
-    photoUrl: "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=800&q=80",
-    source: "school",
-  },
-  {
-    id: "p3",
-    taggedIds: ["c7", "c8"],
-    date: "2026-02-03",
-    notes: "Elenor and Jake discovering the sensory bin together for the very first time.",
-    photoUrl: "https://images.unsplash.com/photo-1516627145497-ae6968895b24?w=800&q=80",
-    source: "school",
-  },
-  {
-    id: "p4",
-    taggedIds: ["c4", "c9"],
-    date: "2026-02-14",
-    notes: "Mia and Madeline made Valentine's cards for each other — completely unprompted!",
-    photoUrl: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80",
-    source: "school",
-  },
-  {
-    id: "p6",
-    taggedIds: ["c6", "c9"],
-    date: "2026-03-18",
-    notes: "Hailey and Madeline working out how to balance the seesaw — ten whole minutes of teamwork.",
-    photoUrl: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=800&q=80",
     source: "school",
   },
 ];
