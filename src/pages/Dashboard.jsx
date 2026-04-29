@@ -92,18 +92,36 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick }) {
 function ParentTimeline({ user, portraits, childrenList, logout }) {
   const navigate       = useNavigate();
   const parentChildren = childrenList.filter((c) => (user.childIds ?? []).includes(c.id));
-  const [activeId, setActiveId] = useState(parentChildren[0]?.id ?? null);
+  const [activeId,        setActiveId]        = useState(parentChildren[0]?.id ?? null);
+  const [selectedFriendId, setSelectedFriendId] = useState(null);
 
-  const activeChild    = childrenList.find((c) => c.id === activeId);
+  const activeChild = childrenList.find((c) => c.id === activeId);
+
+  // All portraits featuring the active child, newest first
   const childPortraits = portraits
     .filter((p) => p.taggedIds.includes(activeId))
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  // Unique friends who appear alongside the active child
+  const friends = childrenList.filter((c) => {
+    if (c.id === activeId) return false;
+    return childPortraits.some((p) => p.taggedIds.includes(c.id));
+  });
+
+  // Apply friend filter
+  const displayPortraits = selectedFriendId
+    ? childPortraits.filter((p) => p.taggedIds.includes(selectedFriendId))
+    : childPortraits;
+
   const avatarUrl = childPortraits[0]?.photoUrl ?? null;
 
   function playTimeline() {
-    if (childPortraits.length === 0) return;
-    navigate('/slideshow', { state: { portraits: childPortraits, startIndex: 0 } });
+    if (displayPortraits.length === 0) return;
+    navigate('/slideshow', { state: { portraits: displayPortraits, startIndex: 0 } });
+  }
+
+  function toggleFriend(id) {
+    setSelectedFriendId((prev) => (prev === id ? null : id));
   }
 
   if (!activeChild) {
@@ -188,20 +206,62 @@ function ParentTimeline({ user, portraits, childrenList, logout }) {
           </button>
         </div>
 
+        {/* ── Friend filter strip ── */}
+        {friends.length > 0 && (
+          <div className="mb-5">
+            <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-3">
+              Filter by friend
+            </p>
+            <div className="flex gap-4 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
+              {friends.map((friend) => {
+                const active = selectedFriendId === friend.id;
+                return (
+                  <button
+                    key={friend.id}
+                    onClick={() => toggleFriend(friend.id)}
+                    className="flex flex-col items-center gap-1.5 flex-shrink-0"
+                  >
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white font-black text-base shadow-md transition-all ${
+                      active
+                        ? 'bg-teal-500 ring-4 ring-offset-2 ring-offset-amber-50 ring-teal-300'
+                        : 'bg-indigo-200'
+                    }`}>
+                      {initials(friend.name)}
+                    </div>
+                    <span className={`text-xs font-bold w-16 text-center leading-tight ${active ? 'text-teal-600' : 'text-indigo-500'}`}>
+                      {friend.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {selectedFriendId && (
+              <button
+                onClick={() => setSelectedFriendId(null)}
+                className="mt-3 text-xs font-bold text-teal-500 underline underline-offset-2"
+              >
+                Show all memories
+              </button>
+            )}
+          </div>
+        )}
+
         {/* ── Timeline feed ── */}
-        {childPortraits.length === 0 ? (
+        {displayPortraits.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-16 h-16 bg-teal-100 rounded-3xl flex items-center justify-center mb-4">
               <Camera size={28} className="text-teal-400" />
             </div>
-            <p className="font-black text-indigo-900 text-lg">No memories yet</p>
+            <p className="font-black text-indigo-900 text-lg">
+              {selectedFriendId ? `No moments with ${friends.find(f => f.id === selectedFriendId)?.name} yet` : 'No memories yet'}
+            </p>
             <p className="text-indigo-400 text-sm font-semibold mt-1 max-w-xs">
               Tap Add Memory below to capture {activeChild.name}'s first friendship moment.
             </p>
           </div>
         ) : (
           <div>
-            {childPortraits.map((portrait, index) => (
+            {displayPortraits.map((portrait, index) => (
               <TimelineEntry
                 key={portrait.id}
                 portrait={portrait}
@@ -209,7 +269,7 @@ function ParentTimeline({ user, portraits, childrenList, logout }) {
                 childrenList={childrenList}
                 onClick={() =>
                   navigate('/slideshow', {
-                    state: { portraits: childPortraits, startIndex: index },
+                    state: { portraits: displayPortraits, startIndex: index },
                   })
                 }
               />
