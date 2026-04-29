@@ -282,7 +282,6 @@ export default function Capture() {
                   muted
                   className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
                 />
-                <DuoSilhouette />
                 <FramingRules />
               </>
             )}
