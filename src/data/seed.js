@@ -9,8 +9,9 @@ export const CHILDREN = [
   { id: "c5", name: "Maggie",  roomId: "pre-kindy" },
   { id: "c6", name: "Hailey",  roomId: "pre-kindy" },
   { id: "c7", name: "Elenor",  roomId: "baby-toddler" },
-  { id: "c8", name: "Jake",    roomId: "baby-toddler" },
-  { id: "c9", name: "Madeline",roomId: "kindy" },
+  { id: "c8",  name: "Jake",    roomId: "baby-toddler" },
+  { id: "c9",  name: "Madeline",roomId: "kindy" },
+  { id: "c10", name: "Billy",   roomId: "baby-toddler" },
 ];
 
 export const ACCOUNTS = {
@@ -28,7 +29,7 @@ export const ACCOUNTS = {
     {
       email: "siblings@parent.com",
       password: "pass123",
-      childIds: ["c7", "c8"],
+      childIds: ["c7", "c8", "c10"],
       name: "Sibling Account",
       role: "parent",
     },
@@ -38,6 +39,14 @@ export const ACCOUNTS = {
 // Seed portraits — swap photoUrl values with your own images.
 // All image data lives here so replacements are one line each.
 export const SEED_PORTRAITS = [
+  {
+    id: "p0c",
+    taggedIds: ["c5", "c8", "c10"],
+    date: "2024-04-13",
+    notes: "Jake giving Maggie a gentle head rub on the couch while Mum Gail feeds baby Billy — a beautiful family moment.",
+    photoUrl: "/images/jake-maggie-billy-couch.jpg",
+    source: "school",
+  },
   {
     id: "p0a",
     taggedIds: ["c5", "c8"],
