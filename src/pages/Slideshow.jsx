@@ -113,6 +113,9 @@ export default function Slideshow() {
         <img
           src={portrait.photoUrl}
           alt={names}
+          fetchpriority="high"
+          loading="eager"
+          decoding="async"
           className="w-full h-full object-cover"
         />
 
@@ -205,13 +208,29 @@ export default function Slideshow() {
       </div>
 
       {/* Image */}
-      <div className="mx-4 rounded-3xl overflow-hidden shadow-2xl flex-shrink-0" style={{ aspectRatio: '4/3' }}>
+      <div className="mx-4 rounded-3xl overflow-hidden shadow-2xl flex-shrink-0" style={{ height: '52dvh' }}>
         <img
           src={portrait.photoUrl}
           alt={names}
+          fetchpriority="high"
+          loading="eager"
+          decoding="async"
           className="w-full h-full object-cover"
         />
       </div>
+
+      {/* Preload next image */}
+      {portraits.length > 1 && (
+        <img
+          src={portraits[(index + 1) % portraits.length].photoUrl}
+          alt=""
+          aria-hidden="true"
+          fetchpriority="low"
+          loading="eager"
+          decoding="async"
+          className="hidden"
+        />
+      )}
 
       {/* Metadata card */}
       <div className="flex-1 bg-amber-50 rounded-t-3xl mt-4 px-5 pt-6 pb-10 overflow-y-auto">

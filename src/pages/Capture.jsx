@@ -275,7 +275,10 @@ export default function Capture() {
     <div className="min-h-screen bg-indigo-950 flex flex-col">
 
       {/* ── Viewfinder / preview area ── */}
-      <div className="relative w-full bg-black overflow-hidden flex-shrink-0" style={{ aspectRatio: '4/3', maxHeight: captured ? '56vw' : '75vh' }}>
+      <div
+        className={`relative w-full bg-black overflow-hidden ${captured ? 'flex-shrink-0' : 'flex-1 min-h-0'}`}
+        style={captured ? { maxHeight: '42vh' } : undefined}
+      >
 
         {!captured ? (
           <>
