@@ -263,7 +263,7 @@ export default function Capture() {
       date:      new Date().toISOString().split('T')[0],
       notes:     notes.trim(),
       photoUrl:  captured,
-      source:    'school',
+      source:    user?.role === 'parent' ? 'parent' : 'school',
     });
     setSaving(false);
     navigate('/dashboard');
