@@ -48,37 +48,90 @@ function compressImageFile(file) {
 /* ─── DuoSilhouette SVG overlay ──────────────────────────────────────── */
 
 function DuoSilhouette() {
+  const outline = {
+    fill: 'none',
+    stroke: 'white',
+    strokeOpacity: 0.7,
+    strokeWidth: 2.5,
+    strokeDasharray: '10 6',
+    strokeLinecap: 'round',
+  };
   return (
     <svg
-      viewBox="0 0 400 480"
+      viewBox="0 0 400 500"
       className="absolute inset-0 w-full h-full pointer-events-none"
       preserveAspectRatio="xMidYMid meet"
     >
-      {/* Left child – head + body */}
-      <ellipse cx="128" cy="138" rx="50" ry="58"   fill="white" opacity="0.18" />
-      <ellipse cx="128" cy="310" rx="60" ry="100"  fill="white" opacity="0.18" />
-      {/* Right child – slightly shorter */}
-      <ellipse cx="272" cy="148" rx="46" ry="52"   fill="white" opacity="0.18" />
-      <ellipse cx="272" cy="310" rx="56" ry="92"   fill="white" opacity="0.18" />
+      {/* Left child – head */}
+      <circle cx="128" cy="128" r="52" {...outline} className="silhouette-outline" />
+      {/* Left child – body */}
+      <ellipse cx="128" cy="315" rx="62" ry="105" {...outline}
+        style={{ strokeDasharray: '10 6', animationDelay: '-0.8s' }}
+        className="silhouette-outline"
+      />
+
+      {/* Right child – head (slightly smaller/shorter) */}
+      <circle cx="272" cy="138" r="46" {...outline}
+        style={{ strokeDasharray: '10 6', animationDelay: '-0.4s' }}
+        className="silhouette-outline"
+      />
+      {/* Right child – body */}
+      <ellipse cx="272" cy="318" rx="56" ry="96" {...outline}
+        style={{ strokeDasharray: '10 6', animationDelay: '-1.2s' }}
+        className="silhouette-outline"
+      />
+
+      {/* Playful heart between them */}
+      <g transform="translate(200, 245)" opacity="0.55">
+        <path
+          d="M0,-8 C4,-14 12,-14 12,-6 C12,2 0,10 0,10 C0,10 -12,2 -12,-6 C-12,-14 -4,-14 0,-8 Z"
+          fill="white"
+        />
+      </g>
+
+      {/* Sparkle top-left of left child */}
+      <g transform="translate(70, 75)" opacity="0.45">
+        <line x1="0" y1="-7" x2="0" y2="7" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="-7" y1="0" x2="7" y2="0" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="-5" y1="-5" x2="5" y2="5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="5" y1="-5" x2="-5" y2="5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+      </g>
+
+      {/* Sparkle top-right of right child */}
+      <g transform="translate(330, 82)" opacity="0.45">
+        <line x1="0" y1="-6" x2="0" y2="6" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="-6" y1="0" x2="6" y2="0" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+        <line x1="-4" y1="-4" x2="4" y2="4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+        <line x1="4" y1="-4" x2="-4" y2="4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+      </g>
     </svg>
   );
 }
 
 /* ─── Framing rule badges ─────────────────────────────────────────────── */
 
-const RULES = ['Next to each other', 'Facing camera', 'Smiling'];
+const TIPS = [
+  { emoji: '👫', label: 'Side by side' },
+  { emoji: '📸', label: 'Face the camera' },
+  { emoji: '😄', label: 'Big smiles' },
+];
 
 function FramingRules() {
   return (
-    <div className="absolute top-4 left-0 right-0 flex justify-center gap-1.5 px-4 flex-wrap">
-      {RULES.map((rule) => (
-        <span
-          key={rule}
-          className="bg-black/45 backdrop-blur-sm rounded-full px-2.5 py-1 text-white text-[10px] font-bold"
-        >
-          {rule}
-        </span>
-      ))}
+    <div className="absolute top-4 left-0 right-0 px-4">
+      <p className="text-center text-white/55 text-[10px] font-extrabold uppercase tracking-widest mb-2">
+        Framing suggestions
+      </p>
+      <div className="flex justify-center gap-1.5 flex-wrap">
+        {TIPS.map(({ emoji, label }) => (
+          <span
+            key={label}
+            className="bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-[11px] font-bold flex items-center gap-1"
+          >
+            <span>{emoji}</span>{label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
