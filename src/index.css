@@ -27,6 +27,14 @@ body {
   display: none;
 }
 
+/* Animated dashed silhouette outlines on the camera viewfinder */
+@keyframes dash-flow {
+  to { stroke-dashoffset: -48; }
+}
+.silhouette-outline {
+  animation: dash-flow 2.4s linear infinite;
+}
+
 /* Safe-area padding helpers */
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);

@@ -17,7 +17,7 @@ export default function App() {
             <ProtectedRoute><Dashboard /></ProtectedRoute>
           } />
           <Route path="/capture" element={
-            <ProtectedRoute requireEducator><Capture /></ProtectedRoute>
+            <ProtectedRoute><Capture /></ProtectedRoute>
           } />
           <Route path="/slideshow" element={
             <ProtectedRoute><Slideshow /></ProtectedRoute>
