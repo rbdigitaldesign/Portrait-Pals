@@ -48,57 +48,65 @@ function compressImageFile(file) {
 /* ─── DuoSilhouette SVG overlay ──────────────────────────────────────── */
 
 function DuoSilhouette() {
-  const outline = {
+  const o = {
     fill: 'none',
     stroke: 'white',
-    strokeOpacity: 0.7,
+    strokeOpacity: 0.68,
     strokeWidth: 2.5,
     strokeDasharray: '10 6',
     strokeLinecap: 'round',
+    strokeLinejoin: 'round',
   };
+
   return (
     <svg
       viewBox="0 0 400 500"
       className="absolute inset-0 w-full h-full pointer-events-none"
       preserveAspectRatio="xMidYMid meet"
     >
-      {/* Left child – head */}
-      <circle cx="128" cy="128" r="52" {...outline} className="silhouette-outline" />
-      {/* Left child – body */}
-      <ellipse cx="128" cy="315" rx="62" ry="105" {...outline}
-        style={{ strokeDasharray: '10 6', animationDelay: '-0.8s' }}
+      {/* ── Left child ── center x=100 */}
+      {/* Head */}
+      <circle cx="100" cy="112" r="50" {...o} className="silhouette-outline" />
+      {/* Body — broad shoulders (Q curves outward at top), narrows to bottom */}
+      <path
+        d="M 26 182 Q 100 160 174 182 C 174 298 160 392 142 424 Q 100 436 58 424 C 40 392 26 298 26 182 Z"
+        {...o}
         className="silhouette-outline"
+        style={{ animationDelay: '-0.7s' }}
       />
 
-      {/* Right child – head (slightly smaller/shorter) */}
-      <circle cx="272" cy="138" r="46" {...outline}
-        style={{ strokeDasharray: '10 6', animationDelay: '-0.4s' }}
+      {/* ── Right child ── center x=300 */}
+      {/* Head */}
+      <circle cx="300" cy="122" r="45" {...o}
         className="silhouette-outline"
+        style={{ animationDelay: '-1.3s' }}
       />
-      {/* Right child – body */}
-      <ellipse cx="272" cy="318" rx="56" ry="96" {...outline}
-        style={{ strokeDasharray: '10 6', animationDelay: '-1.2s' }}
+      {/* Body */}
+      <path
+        d="M 236 190 Q 300 170 364 190 C 364 303 351 393 334 424 Q 300 436 266 424 C 249 393 236 303 236 190 Z"
+        {...o}
         className="silhouette-outline"
+        style={{ animationDelay: '-2.0s' }}
       />
 
-      {/* Playful heart between them */}
-      <g transform="translate(200, 245)" opacity="0.55">
+      {/* Heart between the two figures */}
+      <g transform="translate(200, 252)" opacity="0.52">
         <path
-          d="M0,-8 C4,-14 12,-14 12,-6 C12,2 0,10 0,10 C0,10 -12,2 -12,-6 C-12,-14 -4,-14 0,-8 Z"
+          d="M0,-10 C6,-18 16,-18 16,-8 C16,2 0,14 0,14 C0,14 -16,2 -16,-8 C-16,-18 -6,-18 0,-10 Z"
           fill="white"
         />
       </g>
 
-      {/* Sparkle top-left of left child */}
-      <g transform="translate(70, 75)" opacity="0.45">
+      {/* Sparkle — outer-top of left child */}
+      <g transform="translate(46, 60)" opacity="0.42">
         <line x1="0" y1="-7" x2="0" y2="7" stroke="white" strokeWidth="2" strokeLinecap="round"/>
         <line x1="-7" y1="0" x2="7" y2="0" stroke="white" strokeWidth="2" strokeLinecap="round"/>
         <line x1="-5" y1="-5" x2="5" y2="5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
         <line x1="5" y1="-5" x2="-5" y2="5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
       </g>
 
-      {/* Sparkle top-right of right child */}
-      <g transform="translate(330, 82)" opacity="0.45">
+      {/* Sparkle — outer-top of right child */}
+      <g transform="translate(354, 70)" opacity="0.42">
         <line x1="0" y1="-6" x2="0" y2="6" stroke="white" strokeWidth="2" strokeLinecap="round"/>
         <line x1="-6" y1="0" x2="6" y2="0" stroke="white" strokeWidth="2" strokeLinecap="round"/>
         <line x1="-4" y1="-4" x2="4" y2="4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
