@@ -1,0 +1,371 @@
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Camera, RotateCcw, Check, Upload, SwitchCamera } from 'lucide-react';
+import { useApp } from '../contexts/AppContext';
+
+/* ─── Canvas helpers ──────────────────────────────────────────────────── */
+
+function compressVideoFrame(videoEl) {
+  const MAX = 800;
+  let w = videoEl.videoWidth  || 800;
+  let h = videoEl.videoHeight || 600;
+  if (w > MAX || h > MAX) {
+    const ratio = Math.min(MAX / w, MAX / h);
+    w = Math.round(w * ratio);
+    h = Math.round(h * ratio);
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width  = w;
+  canvas.height = h;
+  canvas.getContext('2d').drawImage(videoEl, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', 0.8);
+}
+
+function compressImageFile(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 800;
+      let w = img.naturalWidth;
+      let h = img.naturalHeight;
+      if (w > MAX || h > MAX) {
+        const ratio = Math.min(MAX / w, MAX / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width  = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.8));
+    };
+    img.src = url;
+  });
+}
+
+/* ─── DuoSilhouette SVG overlay ──────────────────────────────────────── */
+
+function DuoSilhouette() {
+  return (
+    <svg
+      viewBox="0 0 400 480"
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      {/* Left child – head + body */}
+      <ellipse cx="128" cy="138" rx="50" ry="58"   fill="white" opacity="0.18" />
+      <ellipse cx="128" cy="310" rx="60" ry="100"  fill="white" opacity="0.18" />
+      {/* Right child – slightly shorter */}
+      <ellipse cx="272" cy="148" rx="46" ry="52"   fill="white" opacity="0.18" />
+      <ellipse cx="272" cy="310" rx="56" ry="92"   fill="white" opacity="0.18" />
+    </svg>
+  );
+}
+
+/* ─── Framing rule badges ─────────────────────────────────────────────── */
+
+const RULES = ['Next to each other', 'Facing camera', 'Smiling'];
+
+function FramingRules() {
+  return (
+    <div className="absolute top-4 left-0 right-0 flex justify-center gap-1.5 px-4 flex-wrap">
+      {RULES.map((rule) => (
+        <span
+          key={rule}
+          className="bg-black/45 backdrop-blur-sm rounded-full px-2.5 py-1 text-white text-[10px] font-bold"
+        >
+          {rule}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Capture page ────────────────────────────────────────────────────── */
+
+export default function Capture() {
+  const navigate          = useNavigate();
+  const { childrenList, addPortrait } = useApp();
+  const videoRef          = useRef(null);
+  const streamRef         = useRef(null);
+  const fileInputRef      = useRef(null);
+
+  const [facingMode,   setFacingMode]   = useState('environment');
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError,  setCameraError]  = useState(null);
+  const [captured,     setCaptured]     = useState(null);
+  const [selectedIds,  setSelectedIds]  = useState([]);
+  const [notes,        setNotes]        = useState('');
+  const [saving,       setSaving]       = useState(false);
+
+  /* ── Camera lifecycle ── */
+
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setCameraActive(false);
+  }, []);
+
+  const startCamera = useCallback(async (facing = 'environment') => {
+    stopCamera();
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: facing },
+          width:  { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setCameraActive(true);
+    } catch (err) {
+      setCameraError(err.message || 'Camera access denied.');
+    }
+  }, [stopCamera]);
+
+  useEffect(() => {
+    startCamera(facingMode);
+    return stopCamera;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function flipCamera() {
+    const next = facingMode === 'environment' ? 'user' : 'environment';
+    setFacingMode(next);
+    await startCamera(next);
+  }
+
+  /* ── Capture / file ── */
+
+  function handleCapture() {
+    if (!videoRef.current) return;
+    const dataUrl = compressVideoFrame(videoRef.current);
+    stopCamera();
+    setCaptured(dataUrl);
+  }
+
+  function handleRetake() {
+    setCaptured(null);
+    setSelectedIds([]);
+    setNotes('');
+    startCamera(facingMode);
+  }
+
+  async function handleFileInput(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    stopCamera();
+    const dataUrl = await compressImageFile(file);
+    setCaptured(dataUrl);
+    e.target.value = '';
+  }
+
+  /* ── Tagging ── */
+
+  function toggleChild(id) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
+
+  /* ── Save ── */
+
+  function handleSave() {
+    setSaving(true);
+    addPortrait({
+      id:        `p${Date.now()}`,
+      taggedIds: selectedIds,
+      date:      new Date().toISOString().split('T')[0],
+      notes:     notes.trim(),
+      photoUrl:  captured,
+      source:    'school',
+    });
+    setSaving(false);
+    navigate('/dashboard');
+  }
+
+  /* ── Render ── */
+
+  return (
+    <div className="min-h-screen bg-indigo-950 flex flex-col">
+
+      {/* ── Viewfinder / preview area ── */}
+      <div className="relative w-full bg-black overflow-hidden flex-shrink-0" style={{ aspectRatio: '4/3', maxHeight: captured ? '56vw' : '75vh' }}>
+
+        {!captured ? (
+          <>
+            {cameraError ? (
+              /* Error state */
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 p-8 text-center">
+                <p className="text-white/60 font-semibold text-sm">{cameraError}</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-rose-500 rounded-2xl px-5 py-3 font-black text-white flex items-center gap-2 shadow-lg"
+                >
+                  <Upload size={18} /> Choose from Gallery
+                </button>
+              </div>
+            ) : (
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
+                />
+                <DuoSilhouette />
+                <FramingRules />
+              </>
+            )}
+
+            {/* Back */}
+            <button
+              onClick={() => { stopCamera(); navigate('/dashboard'); }}
+              className="absolute top-4 left-4 w-10 h-10 bg-black/50 rounded-2xl flex items-center justify-center text-white z-10"
+            >
+              <ArrowLeft size={20} />
+            </button>
+
+            {/* Flip camera */}
+            {!cameraError && (
+              <button
+                onClick={flipCamera}
+                className="absolute top-4 right-4 w-10 h-10 bg-black/50 rounded-2xl flex items-center justify-center text-white z-10"
+              >
+                <SwitchCamera size={18} />
+              </button>
+            )}
+          </>
+        ) : (
+          /* Captured preview */
+          <>
+            <img src={captured} alt="Captured" className="w-full h-full object-cover" />
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="absolute top-4 left-4 w-10 h-10 bg-black/50 rounded-2xl flex items-center justify-center text-white"
+            >
+              <ArrowLeft size={20} />
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* ── Shutter controls ── */}
+      {!captured && !cameraError && (
+        <div className="flex items-center justify-center gap-8 py-5 bg-indigo-950">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-12 h-12 bg-white/15 rounded-2xl flex items-center justify-center text-white active:scale-90 transition-transform"
+            aria-label="Upload from gallery"
+          >
+            <Upload size={20} />
+          </button>
+
+          {/* Shutter */}
+          <button
+            onClick={handleCapture}
+            className="w-20 h-20 bg-rose-500 rounded-full flex items-center justify-center shadow-2xl shadow-rose-900 active:scale-90 transition-transform border-4 border-white/25"
+            aria-label="Capture photo"
+          >
+            <Camera size={30} className="text-white" />
+          </button>
+
+          <div className="w-12 h-12" />
+        </div>
+      )}
+
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFileInput}
+      />
+
+      {/* ── Post-capture form ── */}
+      {captured && (
+        <div className="bg-amber-50 rounded-t-3xl flex-1 overflow-y-auto px-5 pt-5 pb-10">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-black text-xl text-indigo-900">New Portrait</h2>
+            <button
+              onClick={handleRetake}
+              className="flex items-center gap-1.5 bg-white rounded-2xl px-3.5 py-2 text-indigo-500 font-bold text-sm shadow-sm active:scale-95 transition-transform"
+            >
+              <RotateCcw size={14} /> Retake
+            </button>
+          </div>
+
+          {/* Child checkboxes */}
+          <div className="mb-5">
+            <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-3">
+              Who's in this photo?
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {childrenList.map((child) => {
+                const checked = selectedIds.includes(child.id);
+                return (
+                  <button
+                    key={child.id}
+                    onClick={() => toggleChild(child.id)}
+                    className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 font-bold text-sm transition-all active:scale-95 ${
+                      checked
+                        ? 'bg-rose-500 text-white shadow-md shadow-rose-200'
+                        : 'bg-white text-indigo-700 shadow-sm'
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                        checked ? 'border-white/60 bg-white/20' : 'border-indigo-200'
+                      }`}
+                    >
+                      {checked && <Check size={11} className="text-white" />}
+                    </div>
+                    {child.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div className="mb-6">
+            <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
+              Notes
+            </p>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Describe this friendship moment…"
+              rows={3}
+              className="w-full bg-white rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold text-sm outline-none focus:ring-2 focus:ring-rose-400 placeholder:text-indigo-300 resize-none shadow-sm"
+            />
+          </div>
+
+          {/* Save */}
+          <button
+            onClick={handleSave}
+            disabled={saving || selectedIds.length === 0}
+            className="w-full bg-rose-500 text-white font-black text-lg rounded-2xl py-4 shadow-lg shadow-rose-200 active:scale-95 transition-transform disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Save Portrait'}
+          </button>
+          {selectedIds.length === 0 && (
+            <p className="text-center text-xs text-indigo-400 font-semibold mt-2.5">
+              Tag at least one child to save
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
