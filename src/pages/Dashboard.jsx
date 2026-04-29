@@ -218,7 +218,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
             <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-3">
               Filter by friend
             </p>
-            <div className="flex gap-4 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
+            <div className="flex gap-4 overflow-x-auto scrollbar-none -mx-1 px-1 pt-2 pb-2">
               {friends.map((friend) => {
                 const active = selectedFriendId === friend.id;
                 return (
