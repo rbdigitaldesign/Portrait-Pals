@@ -40,6 +40,14 @@ export const ACCOUNTS = {
 // All image data lives here so replacements are one line each.
 export const SEED_PORTRAITS = [
   {
+    id: "p0d",
+    taggedIds: ["c5", "c8", "c10"],
+    date: "2025-03-29",
+    notes: "Jake is not happy about Maggie pressing buttons on his iPad at the campsite. Billy is standing by, dreaming about food.",
+    photoUrl: "/images/billy-jake-maggie-ipad.jpg",
+    source: "school",
+  },
+  {
     id: "p0c",
     taggedIds: ["c5", "c8", "c10"],
     date: "2024-04-13",
