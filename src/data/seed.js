@@ -40,6 +40,14 @@ export const ACCOUNTS = {
 // All image data lives here so replacements are one line each.
 export const SEED_PORTRAITS = [
   {
+    id: "p0e",
+    taggedIds: ["c5", "c8"],
+    date: "2024-01-27",
+    notes: "Jake cradling baby Maggie on the carpet — she's already smiling up at him.",
+    photoUrl: "/images/jake-maggie-cuddle-carpet.jpg",
+    source: "school",
+  },
+  {
     id: "p0d",
     taggedIds: ["c5", "c8", "c10"],
     date: "2025-03-29",
