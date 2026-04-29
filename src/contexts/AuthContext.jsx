@@ -48,8 +48,19 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  // Links a newly created child to the parent's session so they appear
+  // in their timeline immediately without re-logging in.
+  const addChildToSession = useCallback((childId) => {
+    setUser((prev) => {
+      if (!prev || prev.role !== 'parent') return prev;
+      const updated = { ...prev, childIds: [...(prev.childIds ?? []), childId] };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, addChildToSession }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,6 +1,6 @@
 // Bump this string whenever seed portraits or children change.
 // The app will clear localStorage and reload fresh seed data on next visit.
-export const SEED_VERSION = 'v3';
+export const SEED_VERSION = 'v5';
 
 export const ROOMS = [
   { id: "baby-toddler", name: "Baby/Toddler Room" },
@@ -13,9 +13,9 @@ export const CHILDREN = [
   { id: "c5",  name: "Maggie",  roomId: "pre-kindy", photoUrl: "/images/maggie-profile.jpg" },
   { id: "c6",  name: "Hailey",  roomId: "pre-kindy" },
   { id: "c7",  name: "Elenor",  roomId: "baby-toddler" },
-  { id: "c8",  name: "Jake",    roomId: "baby-toddler" },
+  { id: "c8",  name: "Jake",    roomId: "baby-toddler", photoUrl: "/images/jake-profile.jpg" },
   { id: "c9",  name: "Madeline",roomId: "kindy" },
-  { id: "c10", name: "Billy",   roomId: "baby-toddler" },
+  { id: "c10", name: "Billy",   roomId: "baby-toddler", photoUrl: "/images/billy-profile.jpg" },
 ];
 
 export const ACCOUNTS = {
@@ -33,7 +33,7 @@ export const ACCOUNTS = {
     {
       email: "siblings@parent.com",
       password: "pass123",
-      childIds: ["c7", "c8", "c10"],
+      childIds: ["c8", "c10"],
       name: "Sibling Account",
       role: "parent",
     },
@@ -65,14 +65,6 @@ export const SEED_PORTRAITS = [
     date: "2026-02-21",
     notes: "Camping fun at Hahndorf.",
     photoUrl: "/images/jake-maggie-camping.jpg",
-    source: "school",
-  },
-  {
-    id: "p0b",
-    taggedIds: ["c5", "c8"],
-    date: "2024-12-25",
-    notes: "Jake and Maggie's first Christmas morning together, discovering their new Duplo sets.",
-    photoUrl: "/images/jake-maggie-blocks.jpg",
     source: "school",
   },
   {

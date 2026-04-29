@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, RotateCcw, Check, Upload, SwitchCamera } from 'lucide-react';
+import { ArrowLeft, Camera, RotateCcw, Check, Upload, SwitchCamera, Plus, X } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 
 /* ─── Canvas helpers ──────────────────────────────────────────────────── */
 
@@ -147,19 +148,23 @@ function FramingRules() {
 /* ─── Capture page ────────────────────────────────────────────────────── */
 
 export default function Capture() {
-  const navigate          = useNavigate();
-  const { childrenList, addPortrait } = useApp();
-  const videoRef          = useRef(null);
-  const streamRef         = useRef(null);
-  const fileInputRef      = useRef(null);
+  const navigate                       = useNavigate();
+  const { childrenList, rooms, addPortrait, addChild } = useApp();
+  const { user, addChildToSession }    = useAuth();
+  const videoRef                       = useRef(null);
+  const streamRef                      = useRef(null);
+  const fileInputRef                   = useRef(null);
 
-  const [facingMode,   setFacingMode]   = useState('environment');
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraError,  setCameraError]  = useState(null);
-  const [captured,     setCaptured]     = useState(null);
-  const [selectedIds,  setSelectedIds]  = useState([]);
-  const [notes,        setNotes]        = useState('');
-  const [saving,       setSaving]       = useState(false);
+  const [facingMode,    setFacingMode]    = useState('environment');
+  const [cameraActive,  setCameraActive]  = useState(false);
+  const [cameraError,   setCameraError]   = useState(null);
+  const [captured,      setCaptured]      = useState(null);
+  const [selectedIds,   setSelectedIds]   = useState([]);
+  const [notes,         setNotes]         = useState('');
+  const [saving,        setSaving]        = useState(false);
+  const [showNewChild,  setShowNewChild]  = useState(false);
+  const [newChildName,  setNewChildName]  = useState('');
+  const [newChildRoom,  setNewChildRoom]  = useState(rooms[0]?.id ?? '');
 
   /* ── Camera lifecycle ── */
 
@@ -234,6 +239,18 @@ export default function Capture() {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+  }
+
+  function handleAddNewChild(e) {
+    e.preventDefault();
+    const trimmed = newChildName.trim();
+    if (!trimmed) return;
+    const child = { id: `c${Date.now()}`, name: trimmed, roomId: newChildRoom };
+    addChild(child);
+    if (user?.role === 'parent') addChildToSession(child.id);
+    setSelectedIds((prev) => [...prev, child.id]);
+    setNewChildName('');
+    setShowNewChild(false);
   }
 
   /* ── Save ── */
@@ -395,6 +412,49 @@ export default function Capture() {
                 );
               })}
             </div>
+
+            {/* Inline add new child */}
+            {showNewChild ? (
+              <form onSubmit={handleAddNewChild} className="mt-3 bg-white rounded-2xl p-4 shadow-sm border-2 border-dashed border-rose-200">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="font-extrabold text-indigo-900 text-sm">Add new child</p>
+                  <button type="button" onClick={() => setShowNewChild(false)} className="text-indigo-300">
+                    <X size={16} />
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={newChildName}
+                  onChange={(e) => setNewChildName(e.target.value)}
+                  placeholder="First name"
+                  autoFocus
+                  required
+                  className="w-full bg-amber-50 rounded-xl px-3 py-2.5 text-indigo-900 font-semibold text-sm outline-none focus:ring-2 focus:ring-rose-400 placeholder:text-indigo-300 mb-2"
+                />
+                <select
+                  value={newChildRoom}
+                  onChange={(e) => setNewChildRoom(e.target.value)}
+                  className="w-full bg-amber-50 rounded-xl px-3 py-2.5 text-indigo-900 font-semibold text-sm outline-none focus:ring-2 focus:ring-rose-400 appearance-none mb-3"
+                >
+                  {rooms.map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  className="w-full bg-rose-500 text-white font-black text-sm rounded-xl py-2.5 active:scale-95 transition-transform"
+                >
+                  Add &amp; Tag
+                </button>
+              </form>
+            ) : (
+              <button
+                onClick={() => setShowNewChild(true)}
+                className="mt-3 flex items-center gap-1.5 text-rose-500 font-bold text-sm"
+              >
+                <Plus size={15} /> Child not listed? Add them now
+              </button>
+            )}
           </div>
 
           {/* Notes */}
