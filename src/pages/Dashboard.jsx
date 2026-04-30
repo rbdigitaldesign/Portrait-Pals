@@ -57,7 +57,7 @@ function compressProfilePhoto(file) {
   });
 }
 
-function useLongPress(onLongPress, delay = 600) {
+function useLongPress(onLongPress, delay = 800) {
   const timer   = useRef(null);
   const fired   = useRef(false);
   const [pressing, setPressing] = useState(false);
@@ -73,7 +73,6 @@ function useLongPress(onLongPress, delay = 600) {
   }
 
   function start(e) {
-    if (e.type === 'touchstart') e.preventDefault();
     fired.current = false;
     setPressing(true);
     setProgress(0);
