@@ -6,13 +6,17 @@ import Login     from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Capture   from './pages/Capture';
 import Slideshow from './pages/Slideshow';
+import Privacy   from './pages/Privacy';
+import Terms     from './pages/Terms';
 
 export default function App() {
   return (
     <AuthProvider>
       <AppProvider>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/login"   element={<Login />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms"   element={<Terms />} />
           <Route path="/dashboard" element={
             <ProtectedRoute><Dashboard /></ProtectedRoute>
           } />

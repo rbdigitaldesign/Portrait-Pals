@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -357,10 +357,38 @@ export default function Login() {
           </form>
         </div>
 
-        <div className="flex justify-center gap-3 mt-6">
-          {['🌈', '📸', '🎨', '💛', '🌟', '👫', '🖍️'].map((emoji) => (
-            <span key={emoji} className="text-lg select-none">{emoji}</span>
-          ))}
+        {/* Trust badges */}
+        <div className="mt-6 bg-white/70 backdrop-blur-sm rounded-3xl p-4 border border-white">
+          <p className="text-center text-[10px] font-extrabold text-indigo-400 uppercase tracking-widest mb-3">
+            Built for families. Built responsibly.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { emoji: '🔒', label: 'Private by default',  sub: 'Only linked accounts can see your child\'s photos' },
+              { emoji: '🚫', label: 'Never sold',          sub: 'Your data is never sold or shared with third parties' },
+              { emoji: '🤖', label: 'No AI training',      sub: 'Photos are never used to train AI models' },
+              { emoji: '🗑️', label: 'Delete anytime',      sub: 'Request full removal of your data at any time' },
+            ].map(({ emoji, label, sub }) => (
+              <div key={label} className="bg-amber-50 rounded-2xl p-3 flex gap-2.5 items-start">
+                <span className="text-lg flex-shrink-0 mt-0.5">{emoji}</span>
+                <div>
+                  <p className="font-black text-indigo-900 text-xs leading-tight">{label}</p>
+                  <p className="text-indigo-400 text-[10px] font-semibold mt-0.5 leading-snug">{sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Policy links */}
+        <div className="flex justify-center items-center gap-4 mt-4 pb-6">
+          <Link to="/privacy" className="text-xs font-bold text-indigo-400 underline underline-offset-2 hover:text-indigo-600">
+            Privacy Policy
+          </Link>
+          <span className="text-indigo-200">·</span>
+          <Link to="/terms" className="text-xs font-bold text-indigo-400 underline underline-offset-2 hover:text-indigo-600">
+            Terms &amp; Conditions
+          </Link>
         </div>
       </div>
     </div>

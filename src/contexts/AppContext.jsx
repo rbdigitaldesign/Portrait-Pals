@@ -45,8 +45,16 @@ export function AppProvider({ children }) {
     });
   }, []);
 
+  const updateChild = useCallback((childId, updates) => {
+    setChildrenList((prev) => {
+      const next = prev.map((c) => c.id === childId ? { ...c, ...updates } : c);
+      localStorage.setItem(CHILDREN_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   return (
-    <AppContext.Provider value={{ portraits, childrenList, rooms: ROOMS, addPortrait, addChild }}>
+    <AppContext.Provider value={{ portraits, childrenList, rooms: ROOMS, addPortrait, addChild, updateChild }}>
       {children}
     </AppContext.Provider>
   );
