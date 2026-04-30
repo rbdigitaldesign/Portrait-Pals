@@ -1,6 +1,6 @@
 // Bump this string whenever seed portraits or children change.
 // The app will clear localStorage and reload fresh seed data on next visit.
-export const SEED_VERSION = 'v8';
+export const SEED_VERSION = 'v9';
 
 export const ROOMS = [
   { id: "baby-toddler", name: "Baby/Toddler Room" },
@@ -14,7 +14,7 @@ export const CHILDREN = [
   { id: "c6",  name: "Hailey",  roomId: "pre-kindy" },
   { id: "c7",  name: "Elenor",  roomId: "baby-toddler" },
   { id: "c8",  name: "Jake",    roomId: "baby-toddler", photoUrl: "/images/jake-profile.jpg", birthdate: "2022-06-01" },
-  { id: "c9",  name: "Madeline",roomId: "kindy" },
+  { id: "c9",  name: "Mary",    roomId: "kindy" },
   { id: "c10", name: "Billy",   roomId: "baby-toddler", photoUrl: "/images/billy-profile.jpg" },
 ];
 

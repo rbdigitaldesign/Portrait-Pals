@@ -89,9 +89,11 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick }) {
     .map((id) => childrenList.find((c) => c.id === id))
     .filter(Boolean);
 
-  const label   = friends.length > 0
+  const label = friends.length > 0
     ? `With ${friends.map((f) => f.name).join(' & ')}`
-    : 'A special moment';
+    : portrait.notes
+      ? portrait.notes.length > 38 ? portrait.notes.slice(0, 38) + '…' : portrait.notes
+      : `${activeChild?.name ?? 'A'}'s moment`;
   const dateStr = formatDateShort(portrait.date);
   const activeChild = childrenList.find((c) => c.id === activeChildId);
   const age     = ageAtDate(activeChild?.birthdate, portrait.date);
