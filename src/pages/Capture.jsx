@@ -382,7 +382,6 @@ export default function Capture() {
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         className="hidden"
         onChange={handleFileInput}
       />
