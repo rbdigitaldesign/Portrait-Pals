@@ -70,7 +70,7 @@ function compressProfilePhoto(file) {
   });
 }
 
-function useLongPress(onLongPress, delay = 800) {
+function useLongPress(onLongPress, delay = 1800) {
   const timer   = useRef(null);
   const fired   = useRef(false);
   const [pressing, setPressing] = useState(false);
