@@ -79,6 +79,26 @@ function useLongPress(onLongPress, delay = 600) {
   };
 }
 
+const FUN_TITLES = [
+  'A little moment ✨',
+  'Just us! 💕',
+  'Golden times 🌟',
+  'One of those days 🌈',
+  'Pure joy 🎉',
+  'A beautiful memory 🌸',
+  'Tiny adventures 🦋',
+  'Sweet moments 🍀',
+  'Together time 💛',
+  'A day to remember 📸',
+  'Full hearts 💖',
+  'Making memories 🎨',
+];
+
+function funTitle(portrait) {
+  const seed = portrait.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return FUN_TITLES[seed % FUN_TITLES.length];
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    PARENT TIMELINE
    ═══════════════════════════════════════════════════════════════════════ */
@@ -93,9 +113,7 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick }) {
   const age     = ageAtDate(activeChild?.birthdate, portrait.date);
   const label = friends.length > 0
     ? `With ${friends.map((f) => f.name).join(' & ')}`
-    : portrait.notes
-      ? portrait.notes.length > 38 ? portrait.notes.slice(0, 38) + '…' : portrait.notes
-      : `${activeChild?.name ?? 'A'}'s moment`;
+    : funTitle(portrait);
   const dateStr = formatDateShort(portrait.date);
 
   return (
@@ -242,6 +260,9 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
             <Plus size={15} /> Add Child
           </button>
         </div>
+        <p className="text-[10px] font-semibold text-indigo-300 mt-1.5 tracking-wide">
+          Hold a name to edit profile
+        </p>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pt-5">
@@ -395,16 +416,21 @@ function ChildChip({ child, active, onClick, onLongPress }) {
       onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
       className="flex flex-col items-center gap-1.5 flex-shrink-0 select-none"
     >
-      <div
-        className={`w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center text-white font-black text-base shadow-md transition-all ${
-          active
-            ? 'bg-rose-500 ring-4 ring-offset-2 ring-offset-amber-50 ring-rose-300'
-            : 'bg-indigo-200'
-        }`}
-      >
-        {child.photoUrl
-          ? <img src={child.photoUrl} alt={child.name} className="w-full h-full object-cover" />
-          : initials(child.name)}
+      <div className="relative">
+        <div
+          className={`w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center text-white font-black text-base shadow-md transition-all ${
+            active
+              ? 'bg-rose-500 ring-4 ring-offset-2 ring-offset-amber-50 ring-rose-300'
+              : 'bg-indigo-200'
+          }`}
+        >
+          {child.photoUrl
+            ? <img src={child.photoUrl} alt={child.name} className="w-full h-full object-cover" />
+            : initials(child.name)}
+        </div>
+        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full shadow flex items-center justify-center">
+          <Pencil size={9} className="text-indigo-400" />
+        </div>
       </div>
       <span className="text-xs font-bold text-indigo-700 w-16 text-center leading-tight">
         {child.name}
@@ -445,11 +471,12 @@ function ChildPill({ child, active, onClick, onLongPress }) {
     <button
       {...lp}
       onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
-      className={`flex-shrink-0 px-4 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 select-none ${
+      className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 select-none ${
         active ? 'bg-teal-500 text-white shadow-md' : 'bg-amber-50 text-indigo-600'
       }`}
     >
       {child.name}
+      <Pencil size={10} className={active ? 'text-white/50' : 'text-indigo-300'} />
     </button>
   );
 }
@@ -699,6 +726,9 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
             <span className="text-xs font-bold text-rose-400 w-16 text-center leading-tight">Add Child</span>
           </button>
         </div>
+        <p className="text-[10px] font-semibold text-indigo-300 mb-1 tracking-wide">
+          Hold a child to edit profile
+        </p>
 
         {/* Section heading */}
         <div className="flex items-center justify-between mt-5 mb-3">
