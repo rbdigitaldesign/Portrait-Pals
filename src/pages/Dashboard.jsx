@@ -509,10 +509,10 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
       )}
 
       {/* ── Sticky: Add Memory ── */}
-      <div className="fixed bottom-0 left-0 right-0 px-5 pb-safe pb-6 pt-4 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent">
+      <div className="fixed bottom-0 left-0 right-0 px-5 pb-safe pb-10 pt-6 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent">
         <button
           onClick={() => navigate('/capture')}
-          className="w-full bg-teal-500 text-white font-black text-lg rounded-2xl py-4 flex items-center justify-center gap-2.5 shadow-xl shadow-teal-200 active:scale-95 transition-transform"
+          className="w-full bg-teal-500 text-white font-black text-lg rounded-2xl py-4 flex items-center justify-center gap-2.5 shadow-2xl shadow-teal-300 active:scale-95 transition-transform"
         >
           <Camera size={20} />
           Add Memory
@@ -921,10 +921,10 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
       </div>
 
       {/* Sticky bottom: Capture Portrait */}
-      <div className="fixed bottom-0 left-0 right-0 px-5 pb-safe pb-6 pt-4 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent">
+      <div className="fixed bottom-0 left-0 right-0 px-5 pb-safe pb-10 pt-6 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent">
         <button
           onClick={() => navigate('/capture')}
-          className="w-full bg-rose-500 text-white font-black text-lg rounded-2xl py-4 flex items-center justify-center gap-2.5 shadow-xl shadow-rose-200 active:scale-95 transition-transform"
+          className="w-full bg-rose-500 text-white font-black text-lg rounded-2xl py-4 flex items-center justify-center gap-2.5 shadow-2xl shadow-rose-300 active:scale-95 transition-transform"
         >
           <Camera size={20} />
           Capture Portrait
