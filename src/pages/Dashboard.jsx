@@ -214,6 +214,7 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
         <div
           {...lp}
           onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
+          onContextMenu={(e) => e.preventDefault()}
           className={`flex-1 bg-white rounded-3xl shadow-md shadow-indigo-100 overflow-hidden text-left mb-5 transition-transform cursor-pointer select-none ${pressing && progress > 0.2 ? 'scale-[0.97]' : 'active:scale-[0.98]'}`}
         >
           {/* Header row */}
@@ -543,6 +544,7 @@ function ChildChip({ child, active, onClick, onLongPress }) {
     <button
       {...lp}
       onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
+      onContextMenu={(e) => e.preventDefault()}
       className="flex flex-col items-center gap-1.5 flex-shrink-0 select-none"
     >
       <div className="relative">
@@ -588,6 +590,7 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
       <div
         {...lp}
         onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
+        onContextMenu={(e) => e.preventDefault()}
         className={`bg-white rounded-3xl shadow-lg shadow-indigo-100 overflow-hidden transition-transform text-left w-full cursor-pointer select-none ${pressing && progress > 0.2 ? 'scale-[0.96]' : 'active:scale-95'}`}
       >
         <div className="aspect-[4/3] bg-indigo-100 overflow-hidden relative">
@@ -636,6 +639,7 @@ function ChildPill({ child, active, onClick, onLongPress }) {
     <button
       {...lp}
       onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
+      onContextMenu={(e) => e.preventDefault()}
       className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 select-none ${
         active ? 'bg-teal-500 text-white shadow-md' : 'bg-amber-50 text-indigo-600'
       }`}

@@ -35,6 +35,15 @@ body {
   animation: dash-flow 2.4s linear infinite;
 }
 
+/* Prevent native Android/iOS image context menu inside interactive elements */
+button img,
+[role="button"] img {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+
 /* Safe-area padding helpers */
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
