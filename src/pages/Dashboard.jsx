@@ -214,7 +214,7 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
         <div
           {...lp}
           onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
-          className={`flex-1 bg-white rounded-3xl shadow-md shadow-indigo-100 overflow-hidden text-left mb-5 transition-transform cursor-pointer select-none ${pressing ? 'scale-[0.97]' : 'active:scale-[0.98]'}`}
+          className={`flex-1 bg-white rounded-3xl shadow-md shadow-indigo-100 overflow-hidden text-left mb-5 transition-transform cursor-pointer select-none ${pressing && progress > 0.2 ? 'scale-[0.97]' : 'active:scale-[0.98]'}`}
         >
           {/* Header row */}
           <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
@@ -248,7 +248,7 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
               loading="lazy"
             />
             {/* Progress ring + trash shown while holding */}
-            {pressing && (
+            {pressing && progress > 0.2 && (
               <div className="absolute inset-0 bg-rose-900/50 flex flex-col items-center justify-center gap-2">
                 <div className="relative w-16 h-16">
                   <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
@@ -576,11 +576,11 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
       <div
         {...lp}
         onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
-        className={`bg-white rounded-3xl shadow-lg shadow-indigo-100 overflow-hidden transition-transform text-left w-full cursor-pointer select-none ${pressing ? 'scale-[0.96]' : 'active:scale-95'}`}
+        className={`bg-white rounded-3xl shadow-lg shadow-indigo-100 overflow-hidden transition-transform text-left w-full cursor-pointer select-none ${pressing && progress > 0.2 ? 'scale-[0.96]' : 'active:scale-95'}`}
       >
         <div className="aspect-[4/3] bg-indigo-100 overflow-hidden relative">
           <img src={portrait.photoUrl} alt={names} className="w-full h-full object-cover" loading="lazy" />
-          {pressing && (
+          {pressing && progress > 0.2 && (
             <div className="absolute inset-0 bg-rose-900/50 flex flex-col items-center justify-center gap-1.5">
               <div className="relative w-12 h-12">
                 <svg className="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
