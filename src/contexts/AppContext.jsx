@@ -53,8 +53,16 @@ export function AppProvider({ children }) {
     });
   }, []);
 
+  const deletePortrait = useCallback((portraitId) => {
+    setPortraits((prev) => {
+      const next = prev.filter((p) => p.id !== portraitId);
+      localStorage.setItem(PORTRAITS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   return (
-    <AppContext.Provider value={{ portraits, childrenList, rooms: ROOMS, addPortrait, addChild, updateChild }}>
+    <AppContext.Provider value={{ portraits, childrenList, rooms: ROOMS, addPortrait, addChild, updateChild, deletePortrait }}>
       {children}
     </AppContext.Provider>
   );
