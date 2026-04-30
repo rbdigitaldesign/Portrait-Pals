@@ -309,16 +309,19 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
     return childPortraits.some((p) => p.taggedIds.includes(c.id));
   });
 
-  // Apply friend filter
+  // Apply friend filter — newest-first for the feed cards
   const displayPortraits = selectedFriendId
     ? childPortraits.filter((p) => p.taggedIds.includes(selectedFriendId))
     : childPortraits;
 
+  // Oldest-first for slideshow so the story plays chronologically
+  const slideshowPortraits = [...displayPortraits].sort((a, b) => new Date(a.date) - new Date(b.date));
+
   const avatarUrl = activeChild.photoUrl ?? childPortraits[0]?.photoUrl ?? null;
 
   function playTimeline() {
-    if (displayPortraits.length === 0) return;
-    navigate('/slideshow', { state: { portraits: displayPortraits, startIndex: 0 } });
+    if (slideshowPortraits.length === 0) return;
+    navigate('/slideshow', { state: { portraits: slideshowPortraits, startIndex: 0 } });
   }
 
   function toggleFriend(id) {
@@ -467,7 +470,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
           </div>
         ) : (
           <div>
-            {displayPortraits.map((portrait, index) => (
+            {displayPortraits.map((portrait) => (
               <TimelineEntry
                 key={portrait.id}
                 portrait={portrait}
@@ -475,7 +478,10 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
                 childrenList={childrenList}
                 onClick={() =>
                   navigate('/slideshow', {
-                    state: { portraits: displayPortraits, startIndex: index },
+                    state: {
+                      portraits: slideshowPortraits,
+                      startIndex: slideshowPortraits.findIndex((p) => p.id === portrait.id),
+                    },
                   })
                 }
                 onDelete={() => deletePortrait(portrait.id)}
@@ -808,8 +814,16 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
     return true;
   });
 
-  function openSlideshow(index) {
-    navigate('/slideshow', { state: { portraits: filteredPortraits, startIndex: index } });
+  // Oldest-first for slideshow so the story plays chronologically
+  const slideshowPortraits = [...filteredPortraits].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  function openSlideshow(portrait) {
+    navigate('/slideshow', {
+      state: {
+        portraits: slideshowPortraits,
+        startIndex: slideshowPortraits.findIndex((p) => p.id === portrait.id),
+      },
+    });
   }
 
   function handleRoomChange(roomId) {
@@ -907,12 +921,12 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            {filteredPortraits.map((portrait, index) => (
+            {filteredPortraits.map((portrait) => (
               <PortraitCard
                 key={portrait.id}
                 portrait={portrait}
                 childrenList={childrenList}
-                onClick={() => openSlideshow(index)}
+                onClick={() => openSlideshow(portrait)}
                 onDelete={() => deletePortrait(portrait.id)}
               />
             ))}
