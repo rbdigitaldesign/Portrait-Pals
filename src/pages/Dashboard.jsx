@@ -515,7 +515,10 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
       )}
 
       {/* ── Sticky: Add Memory ── */}
-      <div className="fixed bottom-0 left-0 right-0 px-5 pb-safe pb-10 pt-6 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent">
+      <div
+        className="fixed bottom-0 left-0 right-0 px-5 pt-6 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)' }}
+      >
         <button
           onClick={() => navigate('/capture')}
           className="w-full bg-teal-500 text-white font-black text-lg rounded-2xl py-4 flex items-center justify-center gap-2.5 shadow-2xl shadow-teal-300 active:scale-95 transition-transform"
@@ -806,16 +809,18 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
     (c) => selectedRoom === 'all' || c.roomId === selectedRoom
   );
 
-  const filteredPortraits = portraits.filter((p) => {
-    if (p.source !== 'school') return false;
-    const inView = p.taggedIds.some((id) => visibleChildren.some((c) => c.id === id));
-    if (!inView) return false;
-    if (selectedChildId) return p.taggedIds.includes(selectedChildId);
-    return true;
-  });
+  // Oldest-first — grid and slideshow both read chronologically
+  const filteredPortraits = portraits
+    .filter((p) => {
+      if (p.source !== 'school') return false;
+      const inView = p.taggedIds.some((id) => visibleChildren.some((c) => c.id === id));
+      if (!inView) return false;
+      if (selectedChildId) return p.taggedIds.includes(selectedChildId);
+      return true;
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  // Oldest-first for slideshow so the story plays chronologically
-  const slideshowPortraits = [...filteredPortraits].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const slideshowPortraits = filteredPortraits;
 
   function openSlideshow(portrait) {
     navigate('/slideshow', {
@@ -935,7 +940,10 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
       </div>
 
       {/* Sticky bottom: Capture Portrait */}
-      <div className="fixed bottom-0 left-0 right-0 px-5 pb-safe pb-10 pt-6 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent">
+      <div
+        className="fixed bottom-0 left-0 right-0 px-5 pt-6 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)' }}
+      >
         <button
           onClick={() => navigate('/capture')}
           className="w-full bg-rose-500 text-white font-black text-lg rounded-2xl py-4 flex items-center justify-center gap-2.5 shadow-2xl shadow-rose-300 active:scale-95 transition-transform"
