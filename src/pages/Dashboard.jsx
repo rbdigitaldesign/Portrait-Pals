@@ -818,9 +818,10 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
       if (selectedChildId) return p.taggedIds.includes(selectedChildId);
       return true;
     })
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  const slideshowPortraits = filteredPortraits;
+  // Slideshow plays oldest→newest even though grid shows newest→oldest
+  const slideshowPortraits = [...filteredPortraits].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   function openSlideshow(portrait) {
     navigate('/slideshow', {
