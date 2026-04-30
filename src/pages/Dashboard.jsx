@@ -173,7 +173,7 @@ function DeleteConfirm({ onConfirm, onCancel }) {
   );
 }
 
-function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelete }) {
+function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelete, onAddBirthday }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const lp = useLongPress(() => setConfirmDelete(true));
   const { pressing, progress } = lp;
@@ -186,9 +186,11 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
   const activeChild = childrenList.find((c) => c.id === activeChildId);
   const ageLong = ageAtDateLong(activeChild?.birthdate, portrait.date);
   const friendNames = friends.map((f) => f.name).join(' & ');
-  const label = friends.length > 0
+  const hasFriends = friends.length > 0;
+  const label = hasFriends
     ? (ageLong ? `With ${friendNames} at ${ageLong}` : `With ${friendNames}`)
     : funTitle(portrait);
+  const showBirthdayNudge = hasFriends && !ageLong && !!activeChild;
   const dateStr = formatDateShort(portrait.date);
 
   return (
@@ -216,7 +218,17 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
         >
           {/* Header row */}
           <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
-            <h3 className="font-black text-indigo-900 text-base leading-tight">{label}</h3>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-black text-indigo-900 text-base leading-tight">{label}</h3>
+              {showBirthdayNudge && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onAddBirthday?.(); }}
+                  className="mt-1 text-[11px] font-bold text-teal-500 underline underline-offset-2"
+                >
+                  + Add {activeChild.name}'s birthday to see their age
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
               <span className={`font-extrabold text-[10px] px-2.5 py-1 rounded-full ${portrait.source === 'parent' ? 'bg-teal-100 text-teal-600' : 'bg-amber-100 text-amber-600'}`}>
                 {portrait.source === 'parent' ? 'Family' : 'School'}
@@ -467,6 +479,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
                   })
                 }
                 onDelete={() => deletePortrait(portrait.id)}
+                onAddBirthday={() => setEditingChild(activeChild)}
               />
             ))}
           </div>
