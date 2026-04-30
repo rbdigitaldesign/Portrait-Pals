@@ -309,16 +309,19 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
     return childPortraits.some((p) => p.taggedIds.includes(c.id));
   });
 
-  // Apply friend filter
+  // Apply friend filter — newest-first for the feed cards
   const displayPortraits = selectedFriendId
     ? childPortraits.filter((p) => p.taggedIds.includes(selectedFriendId))
     : childPortraits;
 
+  // Oldest-first for slideshow so the story plays chronologically
+  const slideshowPortraits = [...displayPortraits].sort((a, b) => new Date(a.date) - new Date(b.date));
+
   const avatarUrl = activeChild.photoUrl ?? childPortraits[0]?.photoUrl ?? null;
 
   function playTimeline() {
-    if (displayPortraits.length === 0) return;
-    navigate('/slideshow', { state: { portraits: displayPortraits, startIndex: 0 } });
+    if (slideshowPortraits.length === 0) return;
+    navigate('/slideshow', { state: { portraits: slideshowPortraits, startIndex: 0 } });
   }
 
   function toggleFriend(id) {
@@ -467,7 +470,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
           </div>
         ) : (
           <div>
-            {displayPortraits.map((portrait, index) => (
+            {displayPortraits.map((portrait) => (
               <TimelineEntry
                 key={portrait.id}
                 portrait={portrait}
@@ -475,7 +478,10 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
                 childrenList={childrenList}
                 onClick={() =>
                   navigate('/slideshow', {
-                    state: { portraits: displayPortraits, startIndex: index },
+                    state: {
+                      portraits: slideshowPortraits,
+                      startIndex: slideshowPortraits.findIndex((p) => p.id === portrait.id),
+                    },
                   })
                 }
                 onDelete={() => deletePortrait(portrait.id)}
@@ -489,6 +495,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
       {showAddChild && (
         <AddChildModal
           rooms={rooms}
+          hideRoom
           onClose={() => setShowAddChild(false)}
           onAdd={(child) => {
             addChild(child);
@@ -508,10 +515,10 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
       )}
 
       {/* ── Sticky: Add Memory ── */}
-      <div className="fixed bottom-0 left-0 right-0 px-5 pb-safe pb-6 pt-4 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent">
+      <div className="fixed bottom-0 left-0 right-0 px-5 pb-safe pb-10 pt-6 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent">
         <button
           onClick={() => navigate('/capture')}
-          className="w-full bg-teal-500 text-white font-black text-lg rounded-2xl py-4 flex items-center justify-center gap-2.5 shadow-xl shadow-teal-200 active:scale-95 transition-transform"
+          className="w-full bg-teal-500 text-white font-black text-lg rounded-2xl py-4 flex items-center justify-center gap-2.5 shadow-2xl shadow-teal-300 active:scale-95 transition-transform"
         >
           <Camera size={20} />
           Add Memory
@@ -526,7 +533,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
    ═══════════════════════════════════════════════════════════════════════ */
 
 function ChildChip({ child, active, onClick, onLongPress }) {
-  const lp = useLongPress(onLongPress ?? (() => {}));
+  const lp = useLongPress(onLongPress ?? (() => {}), 600);
   return (
     <button
       {...lp}
@@ -619,7 +626,7 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
 /* ─── ChildPill (parent timeline switcher with long-press) ─────────────── */
 
 function ChildPill({ child, active, onClick, onLongPress }) {
-  const lp = useLongPress(onLongPress ?? (() => {}));
+  const lp = useLongPress(onLongPress ?? (() => {}), 600);
   return (
     <button
       {...lp}
@@ -727,7 +734,7 @@ function EditChildModal({ child, rooms, onClose, onSave }) {
 
 /* ─── AddChildModal ─────────────────────────────────────────────────────── */
 
-function AddChildModal({ rooms, onClose, onAdd }) {
+function AddChildModal({ rooms, onClose, onAdd, hideRoom = false }) {
   const [name,      setName]      = useState('');
   const [birthdate, setBirthdate] = useState('');
   const [roomId,    setRoomId]    = useState(rooms[0]?.id ?? '');
@@ -736,7 +743,7 @@ function AddChildModal({ rooms, onClose, onAdd }) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    onAdd({ id: `c${Date.now()}`, name: trimmed, birthdate: birthdate || undefined, roomId });
+    onAdd({ id: `c${Date.now()}`, name: trimmed, birthdate: birthdate || undefined, roomId: hideRoom ? undefined : roomId });
     onClose();
   }
 
@@ -768,15 +775,17 @@ function AddChildModal({ rooms, onClose, onAdd }) {
               className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400"
             />
           </div>
-          <div>
-            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">Room</label>
-            <select
-              value={roomId} onChange={(e) => setRoomId(e.target.value)}
-              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400 appearance-none"
-            >
-              {rooms.map((r) => (<option key={r.id} value={r.id}>{r.name}</option>))}
-            </select>
-          </div>
+          {!hideRoom && (
+            <div>
+              <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">Room</label>
+              <select
+                value={roomId} onChange={(e) => setRoomId(e.target.value)}
+                className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400 appearance-none"
+              >
+                {rooms.map((r) => (<option key={r.id} value={r.id}>{r.name}</option>))}
+              </select>
+            </div>
+          )}
           <button type="submit" className="w-full bg-rose-500 text-white font-black text-base rounded-2xl py-4 shadow-lg shadow-rose-200 active:scale-95 transition-transform mt-2">
             Add Child
           </button>
@@ -805,8 +814,16 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
     return true;
   });
 
-  function openSlideshow(index) {
-    navigate('/slideshow', { state: { portraits: filteredPortraits, startIndex: index } });
+  // Oldest-first for slideshow so the story plays chronologically
+  const slideshowPortraits = [...filteredPortraits].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  function openSlideshow(portrait) {
+    navigate('/slideshow', {
+      state: {
+        portraits: slideshowPortraits,
+        startIndex: slideshowPortraits.findIndex((p) => p.id === portrait.id),
+      },
+    });
   }
 
   function handleRoomChange(roomId) {
@@ -904,12 +921,12 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            {filteredPortraits.map((portrait, index) => (
+            {filteredPortraits.map((portrait) => (
               <PortraitCard
                 key={portrait.id}
                 portrait={portrait}
                 childrenList={childrenList}
-                onClick={() => openSlideshow(index)}
+                onClick={() => openSlideshow(portrait)}
                 onDelete={() => deletePortrait(portrait.id)}
               />
             ))}
@@ -918,10 +935,10 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
       </div>
 
       {/* Sticky bottom: Capture Portrait */}
-      <div className="fixed bottom-0 left-0 right-0 px-5 pb-safe pb-6 pt-4 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent">
+      <div className="fixed bottom-0 left-0 right-0 px-5 pb-safe pb-10 pt-6 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent">
         <button
           onClick={() => navigate('/capture')}
-          className="w-full bg-rose-500 text-white font-black text-lg rounded-2xl py-4 flex items-center justify-center gap-2.5 shadow-xl shadow-rose-200 active:scale-95 transition-transform"
+          className="w-full bg-rose-500 text-white font-black text-lg rounded-2xl py-4 flex items-center justify-center gap-2.5 shadow-2xl shadow-rose-300 active:scale-95 transition-transform"
         >
           <Camera size={20} />
           Capture Portrait
