@@ -36,6 +36,19 @@ function ageAtDate(birthdate, portraitDate) {
   return `${years}y ${months}m`;
 }
 
+function ageAtDateLong(birthdate, portraitDate) {
+  if (!birthdate) return null;
+  const birth = new Date(birthdate);
+  const photo = new Date(portraitDate);
+  let years  = photo.getFullYear() - birth.getFullYear();
+  let months = photo.getMonth()    - birth.getMonth();
+  if (months < 0) { years--; months += 12; }
+  if (years < 0)  return null;
+  const y = years  > 0 ? `${years} ${years  === 1 ? 'year'  : 'years'}` : '';
+  const m = months > 0 ? `${months} ${months === 1 ? 'month' : 'months'}` : '';
+  return [y, m].filter(Boolean).join(' and ') || null;
+}
+
 function compressProfilePhoto(file) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -171,9 +184,10 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
     .filter(Boolean);
 
   const activeChild = childrenList.find((c) => c.id === activeChildId);
-  const age     = ageAtDate(activeChild?.birthdate, portrait.date);
+  const ageLong = ageAtDateLong(activeChild?.birthdate, portrait.date);
+  const friendNames = friends.map((f) => f.name).join(' & ');
   const label = friends.length > 0
-    ? `With ${friends.map((f) => f.name).join(' & ')}`
+    ? (ageLong ? `With ${friendNames} at ${ageLong}` : `With ${friendNames}`)
     : funTitle(portrait);
   const dateStr = formatDateShort(portrait.date);
 
@@ -204,11 +218,6 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
           <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
             <h3 className="font-black text-indigo-900 text-base leading-tight">{label}</h3>
             <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
-              {age && (
-                <span className="bg-indigo-100 text-indigo-500 font-extrabold text-[10px] px-2.5 py-1 rounded-full">
-                  {age}
-                </span>
-              )}
               <span className={`font-extrabold text-[10px] px-2.5 py-1 rounded-full ${portrait.source === 'parent' ? 'bg-teal-100 text-teal-600' : 'bg-amber-100 text-amber-600'}`}>
                 {portrait.source === 'parent' ? 'Family' : 'School'}
               </span>
