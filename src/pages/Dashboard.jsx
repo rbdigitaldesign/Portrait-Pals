@@ -496,6 +496,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
         <AddChildModal
           rooms={rooms}
           hideRoom
+          userRole="parent"
           onClose={() => setShowAddChild(false)}
           onAdd={(child) => {
             addChild(child);
@@ -509,6 +510,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
         <EditChildModal
           child={editingChild}
           rooms={rooms}
+          userRole="parent"
           onClose={() => setEditingChild(null)}
           onSave={(updates) => { updateChild(editingChild.id, updates); setEditingChild(null); }}
         />
@@ -646,13 +648,16 @@ function ChildPill({ child, active, onClick, onLongPress }) {
 
 /* ─── EditChildModal ────────────────────────────────────────────────────── */
 
-function EditChildModal({ child, rooms, onClose, onSave }) {
+function EditChildModal({ child, rooms, onClose, onSave, userRole }) {
   const [name,      setName]      = useState(child.name);
   const [birthdate, setBirthdate] = useState(child.birthdate ?? '');
   const [photoUrl,  setPhotoUrl]  = useState(child.photoUrl  ?? '');
   const [preview,   setPreview]   = useState(child.photoUrl  ?? null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef(null);
+
+  // Educator cannot override a photo that a parent has chosen
+  const photoLockedByParent = userRole === 'educator' && child.photoSource === 'parent' && !!child.photoUrl;
 
   async function handlePhotoFile(e) {
     const file = e.target.files?.[0];
@@ -668,11 +673,16 @@ function EditChildModal({ child, rooms, onClose, onSave }) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    onSave({
+    const updates = {
       name:      trimmed,
       birthdate: birthdate || undefined,
       photoUrl:  photoUrl  || undefined,
-    });
+    };
+    // Only stamp photoSource if the photo actually changed
+    if (photoUrl && photoUrl !== child.photoUrl) {
+      updates.photoSource = userRole === 'parent' ? 'parent' : 'educator';
+    }
+    onSave(updates);
   }
 
   return (
@@ -685,24 +695,40 @@ function EditChildModal({ child, rooms, onClose, onSave }) {
           </button>
         </div>
 
-        {/* Photo picker */}
+        {/* Photo section */}
         <div className="flex flex-col items-center mb-5">
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="relative w-20 h-20 rounded-full overflow-hidden bg-indigo-100 ring-4 ring-indigo-100 active:scale-95 transition-transform"
-          >
-            {preview
-              ? <img src={preview} alt={name} className="w-full h-full object-cover" />
-              : <span className="font-black text-2xl text-indigo-300">{initials(name)}</span>}
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
-              <Pencil size={18} className="text-white" />
-            </div>
-          </button>
-          <p className="text-xs text-indigo-400 font-semibold mt-2">
-            {uploading ? 'Uploading…' : 'Tap to change photo'}
-          </p>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoFile} />
+          {photoLockedByParent ? (
+            <>
+              <div className="w-20 h-20 rounded-full overflow-hidden bg-indigo-100 ring-4 ring-indigo-100">
+                <img src={child.photoUrl} alt={name} className="w-full h-full object-cover" />
+              </div>
+              <div className="mt-3 bg-amber-50 rounded-2xl px-4 py-2.5 text-center max-w-[240px]">
+                <p className="text-xs font-bold text-amber-600">📸 Photo set by parent</p>
+                <p className="text-[11px] text-indigo-400 font-semibold mt-0.5">
+                  The family has chosen this profile picture.
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="relative w-20 h-20 rounded-full overflow-hidden bg-indigo-100 ring-4 ring-indigo-100 active:scale-95 transition-transform"
+              >
+                {preview
+                  ? <img src={preview} alt={name} className="w-full h-full object-cover" />
+                  : <span className="font-black text-2xl text-indigo-300">{initials(name)}</span>}
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
+                  <Pencil size={18} className="text-white" />
+                </div>
+              </button>
+              <p className="text-xs text-indigo-400 font-semibold mt-2">
+                {uploading ? 'Uploading…' : 'Tap to change photo'}
+              </p>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoFile} />
+            </>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -737,7 +763,7 @@ function EditChildModal({ child, rooms, onClose, onSave }) {
 
 /* ─── AddChildModal ─────────────────────────────────────────────────────── */
 
-function AddChildModal({ rooms, onClose, onAdd, hideRoom = false }) {
+function AddChildModal({ rooms, onClose, onAdd, hideRoom = false, userRole = 'educator' }) {
   const [name,      setName]      = useState('');
   const [birthdate, setBirthdate] = useState('');
   const [roomId,    setRoomId]    = useState(rooms[0]?.id ?? '');
@@ -761,11 +787,12 @@ function AddChildModal({ rooms, onClose, onAdd, hideRoom = false }) {
     const trimmed = name.trim();
     if (!trimmed) return;
     onAdd({
-      id:        `c${Date.now()}`,
-      name:      trimmed,
-      birthdate: birthdate || undefined,
-      photoUrl:  photoUrl  || undefined,
-      roomId:    hideRoom  ? undefined : roomId,
+      id:          `c${Date.now()}`,
+      name:        trimmed,
+      birthdate:   birthdate  || undefined,
+      photoUrl:    photoUrl   || undefined,
+      photoSource: photoUrl   ? userRole : undefined,
+      roomId:      hideRoom   ? undefined : roomId,
     });
     onClose();
   }
@@ -996,13 +1023,14 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
       </div>
 
       {showAddChild && (
-        <AddChildModal rooms={rooms} onClose={() => setShowAddChild(false)} onAdd={addChild} />
+        <AddChildModal rooms={rooms} userRole="educator" onClose={() => setShowAddChild(false)} onAdd={addChild} />
       )}
 
       {editingChild && (
         <EditChildModal
           child={editingChild}
           rooms={rooms}
+          userRole="educator"
           onClose={() => setEditingChild(null)}
           onSave={(updates) => { updateChild(editingChild.id, updates); setEditingChild(null); }}
         />
