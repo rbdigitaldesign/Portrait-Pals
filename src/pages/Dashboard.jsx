@@ -489,6 +489,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
       {showAddChild && (
         <AddChildModal
           rooms={rooms}
+          hideRoom
           onClose={() => setShowAddChild(false)}
           onAdd={(child) => {
             addChild(child);
@@ -727,7 +728,7 @@ function EditChildModal({ child, rooms, onClose, onSave }) {
 
 /* ─── AddChildModal ─────────────────────────────────────────────────────── */
 
-function AddChildModal({ rooms, onClose, onAdd }) {
+function AddChildModal({ rooms, onClose, onAdd, hideRoom = false }) {
   const [name,      setName]      = useState('');
   const [birthdate, setBirthdate] = useState('');
   const [roomId,    setRoomId]    = useState(rooms[0]?.id ?? '');
@@ -736,7 +737,7 @@ function AddChildModal({ rooms, onClose, onAdd }) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    onAdd({ id: `c${Date.now()}`, name: trimmed, birthdate: birthdate || undefined, roomId });
+    onAdd({ id: `c${Date.now()}`, name: trimmed, birthdate: birthdate || undefined, roomId: hideRoom ? undefined : roomId });
     onClose();
   }
 
@@ -768,15 +769,17 @@ function AddChildModal({ rooms, onClose, onAdd }) {
               className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400"
             />
           </div>
-          <div>
-            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">Room</label>
-            <select
-              value={roomId} onChange={(e) => setRoomId(e.target.value)}
-              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400 appearance-none"
-            >
-              {rooms.map((r) => (<option key={r.id} value={r.id}>{r.name}</option>))}
-            </select>
-          </div>
+          {!hideRoom && (
+            <div>
+              <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">Room</label>
+              <select
+                value={roomId} onChange={(e) => setRoomId(e.target.value)}
+                className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400 appearance-none"
+              >
+                {rooms.map((r) => (<option key={r.id} value={r.id}>{r.name}</option>))}
+              </select>
+            </div>
+          )}
           <button type="submit" className="w-full bg-rose-500 text-white font-black text-base rounded-2xl py-4 shadow-lg shadow-rose-200 active:scale-95 transition-transform mt-2">
             Add Child
           </button>
