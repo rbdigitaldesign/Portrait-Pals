@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, LogOut, Plus, X, Users, Play, Pencil } from 'lucide-react';
+import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 
@@ -103,7 +103,38 @@ function funTitle(portrait) {
    PARENT TIMELINE
    ═══════════════════════════════════════════════════════════════════════ */
 
-function TimelineEntry({ portrait, activeChildId, childrenList, onClick }) {
+function DeleteConfirm({ onConfirm, onCancel }) {
+  return (
+    <div className="fixed inset-0 bg-indigo-900/60 backdrop-blur-sm z-50 flex items-center justify-center px-6">
+      <div className="bg-white rounded-3xl w-full max-w-xs p-6 shadow-2xl text-center">
+        <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Trash2 size={24} className="text-rose-500" />
+        </div>
+        <h2 className="font-black text-indigo-900 text-lg mb-1">Delete memory?</h2>
+        <p className="text-indigo-400 font-semibold text-sm mb-6">This can't be undone.</p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 bg-amber-50 text-indigo-600 font-black rounded-2xl py-3.5 active:scale-95 transition-transform"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 bg-rose-500 text-white font-black rounded-2xl py-3.5 shadow-lg shadow-rose-200 active:scale-95 transition-transform"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelete }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const lp = useLongPress(() => setConfirmDelete(true));
+
   const friends = portrait.taggedIds
     .filter((id) => id !== activeChildId)
     .map((id) => childrenList.find((c) => c.id === id))
@@ -117,62 +148,72 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick }) {
   const dateStr = formatDateShort(portrait.date);
 
   return (
-    <div className="flex gap-3">
-      {/* Timeline indicator */}
-      <div className="flex flex-col items-center w-12 flex-shrink-0">
-        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
-          <Camera size={17} className="text-indigo-500" />
+    <>
+      {confirmDelete && (
+        <DeleteConfirm
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={() => { setConfirmDelete(false); onDelete(); }}
+        />
+      )}
+      <div className="flex gap-3">
+        {/* Timeline indicator */}
+        <div className="flex flex-col items-center w-12 flex-shrink-0">
+          <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+            <Camera size={17} className="text-indigo-500" />
+          </div>
+          <div className="w-0.5 bg-indigo-100 flex-1 mt-1 mb-1" />
         </div>
-        <div className="w-0.5 bg-indigo-100 flex-1 mt-1 mb-1" />
-      </div>
 
-      {/* Card */}
-      <button
-        onClick={onClick}
-        className="flex-1 bg-white rounded-3xl shadow-md shadow-indigo-100 overflow-hidden text-left mb-5 active:scale-[0.98] transition-transform"
-      >
-        {/* Header row */}
-        <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
-          <h3 className="font-black text-indigo-900 text-base leading-tight">{label}</h3>
-          <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
-            {age && (
-              <span className="bg-indigo-100 text-indigo-500 font-extrabold text-[10px] px-2.5 py-1 rounded-full">
-                {age}
+        {/* Card */}
+        <div
+          {...lp}
+          onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
+          className="flex-1 bg-white rounded-3xl shadow-md shadow-indigo-100 overflow-hidden text-left mb-5 active:scale-[0.98] transition-transform cursor-pointer select-none"
+        >
+          {/* Header row */}
+          <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
+            <h3 className="font-black text-indigo-900 text-base leading-tight">{label}</h3>
+            <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+              {age && (
+                <span className="bg-indigo-100 text-indigo-500 font-extrabold text-[10px] px-2.5 py-1 rounded-full">
+                  {age}
+                </span>
+              )}
+              <span className={`font-extrabold text-[10px] px-2.5 py-1 rounded-full ${portrait.source === 'parent' ? 'bg-teal-100 text-teal-600' : 'bg-amber-100 text-amber-600'}`}>
+                {portrait.source === 'parent' ? 'Family' : 'School'}
               </span>
+              <span className="bg-indigo-600 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-full">
+                {dateStr}
+              </span>
+            </div>
+          </div>
+
+          {/* Photo */}
+          <div className="aspect-[4/3] overflow-hidden bg-indigo-100">
+            <img
+              src={portrait.photoUrl}
+              alt={label}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+
+          {/* Notes + hint */}
+          <div className="px-4 pt-3 pb-3.5 flex items-end justify-between gap-2">
+            {portrait.notes ? (
+              <p className="text-indigo-700 text-sm font-medium leading-snug">{portrait.notes}</p>
+            ) : (
+              <span />
             )}
-            <span className={`font-extrabold text-[10px] px-2.5 py-1 rounded-full ${portrait.source === 'parent' ? 'bg-teal-100 text-teal-600' : 'bg-amber-100 text-amber-600'}`}>
-              {portrait.source === 'parent' ? 'Family' : 'School'}
-            </span>
-            <span className="bg-indigo-600 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-full">
-              {dateStr}
-            </span>
+            <span className="text-[10px] font-semibold text-indigo-200 flex-shrink-0">Hold to delete</span>
           </div>
         </div>
-
-        {/* Photo */}
-        <div className="aspect-[4/3] overflow-hidden bg-indigo-100">
-          <img
-            src={portrait.photoUrl}
-            alt={label}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        </div>
-
-        {/* Notes */}
-        {portrait.notes ? (
-          <p className="px-4 py-3.5 text-indigo-700 text-sm font-medium leading-snug">
-            {portrait.notes}
-          </p>
-        ) : (
-          <div className="py-3" />
-        )}
-      </button>
-    </div>
+      </div>
+    </>
   );
 }
 
-function ParentTimeline({ user, portraits, childrenList, logout, addChild, addChildToSession, updateChild }) {
+function ParentTimeline({ user, portraits, childrenList, logout, addChild, addChildToSession, updateChild, deletePortrait }) {
   const navigate       = useNavigate();
   const { rooms }      = useApp();
   const parentChildren = childrenList.filter((c) => (user.childIds ?? []).includes(c.id));
@@ -363,6 +404,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
                     state: { portraits: displayPortraits, startIndex: index },
                   })
                 }
+                onDelete={() => deletePortrait(portrait.id)}
               />
             ))}
           </div>
@@ -439,27 +481,40 @@ function ChildChip({ child, active, onClick, onLongPress }) {
   );
 }
 
-function PortraitCard({ portrait, childrenList, onClick }) {
+function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const lp = useLongPress(() => setConfirmDelete(true));
+
   const tagged  = portrait.taggedIds.map((id) => childrenList.find((c) => c.id === id)).filter(Boolean);
   const names   = tagged.map((c) => c.name).join(' & ') || 'Unnamed';
   const dateStr = formatDate(portrait.date);
 
   return (
-    <button
-      onClick={onClick}
-      className="bg-white rounded-3xl shadow-lg shadow-indigo-100 overflow-hidden active:scale-95 transition-transform text-left w-full"
-    >
-      <div className="aspect-[4/3] bg-indigo-100 overflow-hidden">
-        <img src={portrait.photoUrl} alt={names} className="w-full h-full object-cover" loading="lazy" />
+    <>
+      {confirmDelete && (
+        <DeleteConfirm
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={() => { setConfirmDelete(false); onDelete(); }}
+        />
+      )}
+      <div
+        {...lp}
+        onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
+        className="bg-white rounded-3xl shadow-lg shadow-indigo-100 overflow-hidden active:scale-95 transition-transform text-left w-full cursor-pointer select-none"
+      >
+        <div className="aspect-[4/3] bg-indigo-100 overflow-hidden">
+          <img src={portrait.photoUrl} alt={names} className="w-full h-full object-cover" loading="lazy" />
+        </div>
+        <div className="p-3.5">
+          <p className="font-black text-indigo-900 text-sm leading-tight">{names}</p>
+          <p className="text-indigo-400 text-xs font-semibold mt-0.5">{dateStr}</p>
+          {portrait.notes ? (
+            <p className="text-indigo-600 text-xs mt-1.5 leading-snug line-clamp-2">{portrait.notes}</p>
+          ) : null}
+          <p className="text-[10px] font-semibold text-indigo-200 mt-1.5">Hold to delete</p>
+        </div>
       </div>
-      <div className="p-3.5">
-        <p className="font-black text-indigo-900 text-sm leading-tight">{names}</p>
-        <p className="text-indigo-400 text-xs font-semibold mt-0.5">{dateStr}</p>
-        {portrait.notes ? (
-          <p className="text-indigo-600 text-xs mt-1.5 leading-snug line-clamp-2">{portrait.notes}</p>
-        ) : null}
-      </div>
-    </button>
+    </>
   );
 }
 
@@ -633,7 +688,7 @@ function AddChildModal({ rooms, onClose, onAdd }) {
   );
 }
 
-function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, updateChild, logout }) {
+function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, updateChild, deletePortrait, logout }) {
   const navigate = useNavigate();
   const [selectedRoom,    setSelectedRoom]    = useState('all');
   const [selectedChildId, setSelectedChildId] = useState(null);
@@ -757,6 +812,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
                 portrait={portrait}
                 childrenList={childrenList}
                 onClick={() => openSlideshow(index)}
+                onDelete={() => deletePortrait(portrait.id)}
               />
             ))}
           </div>
@@ -796,7 +852,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
 
 export default function Dashboard() {
   const { user, logout, addChildToSession }          = useAuth();
-  const { portraits, childrenList, rooms, addChild, updateChild } = useApp();
+  const { portraits, childrenList, rooms, addChild, updateChild, deletePortrait } = useApp();
 
   if (user?.role === 'parent') {
     return (
@@ -808,6 +864,7 @@ export default function Dashboard() {
         addChild={addChild}
         addChildToSession={addChildToSession}
         updateChild={updateChild}
+        deletePortrait={deletePortrait}
       />
     );
   }
@@ -820,6 +877,7 @@ export default function Dashboard() {
       rooms={rooms}
       addChild={addChild}
       updateChild={updateChild}
+      deletePortrait={deletePortrait}
       logout={logout}
     />
   );
