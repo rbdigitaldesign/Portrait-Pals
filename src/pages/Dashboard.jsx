@@ -526,7 +526,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
    ═══════════════════════════════════════════════════════════════════════ */
 
 function ChildChip({ child, active, onClick, onLongPress }) {
-  const lp = useLongPress(onLongPress ?? (() => {}));
+  const lp = useLongPress(onLongPress ?? (() => {}), 600);
   return (
     <button
       {...lp}
@@ -619,7 +619,7 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
 /* ─── ChildPill (parent timeline switcher with long-press) ─────────────── */
 
 function ChildPill({ child, active, onClick, onLongPress }) {
-  const lp = useLongPress(onLongPress ?? (() => {}));
+  const lp = useLongPress(onLongPress ?? (() => {}), 600);
   return (
     <button
       {...lp}
