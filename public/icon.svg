@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#4f46e5"/>
+  <!-- Camera body -->
+  <rect x="96" y="176" width="320" height="224" rx="36" fill="white"/>
+  <!-- Viewfinder hump -->
+  <rect x="176" y="136" width="128" height="60" rx="24" fill="white"/>
+  <!-- Flash -->
+  <rect x="112" y="144" width="48" height="36" rx="10" fill="#fbbf24"/>
+  <!-- Lens outer -->
+  <circle cx="256" cy="296" r="80" fill="#4f46e5"/>
+  <!-- Lens inner -->
+  <circle cx="256" cy="296" r="56" fill="#312e81"/>
+  <!-- Lens highlight -->
+  <circle cx="232" cy="272" r="14" fill="white" opacity="0.35"/>
+  <!-- Shutter button -->
+  <circle cx="370" cy="164" r="22" fill="#f43f5e"/>
+  <!-- Heart -->
+  <path d="M256 356 C256 356 218 330 218 308 C218 296 228 288 242 294 C248 296 252 300 256 306 C260 300 264 296 270 294 C284 288 294 296 294 308 C294 330 256 356 256 356Z" fill="#f43f5e"/>
+</svg>
