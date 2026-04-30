@@ -292,7 +292,7 @@ export default function Capture() {
       {/* ── Viewfinder / preview area ── */}
       <div
         className={`relative w-full bg-black overflow-hidden ${captured ? 'flex-shrink-0' : 'flex-1 min-h-0'}`}
-        style={captured ? { maxHeight: '42vh' } : undefined}
+        style={captured ? { maxHeight: '28vh' } : undefined}
       >
 
         {!captured ? (
@@ -388,8 +388,8 @@ export default function Capture() {
 
       {/* ── Post-capture form ── */}
       {captured && (
-        <div className="bg-amber-50 rounded-t-3xl flex-1 min-h-0 overflow-y-auto px-5 pt-5 pb-10">
-          <div className="flex items-center justify-between mb-5">
+        <div className="bg-amber-50 rounded-t-3xl flex-1 min-h-0 overflow-y-auto px-5 pt-4 pb-6">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="font-black text-xl text-indigo-900">New Portrait</h2>
             <button
               onClick={handleRetake}
@@ -400,18 +400,18 @@ export default function Capture() {
           </div>
 
           {/* Child checkboxes */}
-          <div className="mb-5">
-            <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-3">
+          <div className="mb-3">
+            <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
               Who's in this photo?
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               {childrenList.map((child) => {
                 const checked = selectedIds.includes(child.id);
                 return (
                   <button
                     key={child.id}
                     onClick={() => toggleChild(child.id)}
-                    className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 font-bold text-sm transition-all active:scale-95 ${
+                    className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 font-bold text-sm transition-all active:scale-95 ${
                       checked
                         ? 'bg-rose-500 text-white shadow-md shadow-rose-200'
                         : 'bg-white text-indigo-700 shadow-sm'
@@ -477,7 +477,7 @@ export default function Capture() {
           </div>
 
           {/* Notes */}
-          <div className="mb-6">
+          <div className="mb-4">
             <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
               Notes
             </p>
@@ -485,8 +485,8 @@ export default function Capture() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Describe this friendship moment…"
-              rows={3}
-              className="w-full bg-white rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold text-sm outline-none focus:ring-2 focus:ring-rose-400 placeholder:text-indigo-300 resize-none shadow-sm"
+              rows={2}
+              className="w-full bg-white rounded-2xl px-4 py-2.5 text-indigo-900 font-semibold text-sm outline-none focus:ring-2 focus:ring-rose-400 placeholder:text-indigo-300 resize-none shadow-sm"
             />
           </div>
 
