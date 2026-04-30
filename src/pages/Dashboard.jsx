@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -58,17 +58,47 @@ function compressProfilePhoto(file) {
 }
 
 function useLongPress(onLongPress, delay = 600) {
-  const timer  = useRef(null);
-  const fired  = useRef(false);
+  const timer   = useRef(null);
+  const fired   = useRef(false);
+  const [pressing, setPressing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const rafRef  = useRef(null);
+  const startTs = useRef(null);
+
+  function tick() {
+    const elapsed = Date.now() - startTs.current;
+    const pct = Math.min(elapsed / delay, 1);
+    setProgress(pct);
+    if (pct < 1) rafRef.current = requestAnimationFrame(tick);
+  }
 
   function start(e) {
     if (e.type === 'touchstart') e.preventDefault();
     fired.current = false;
-    timer.current = setTimeout(() => { fired.current = true; onLongPress(); }, delay);
+    setPressing(true);
+    setProgress(0);
+    startTs.current = Date.now();
+    rafRef.current = requestAnimationFrame(tick);
+    timer.current = setTimeout(() => {
+      fired.current = true;
+      setPressing(false);
+      setProgress(0);
+      onLongPress();
+    }, delay);
   }
-  function cancel() { clearTimeout(timer.current); }
+
+  function cancel() {
+    clearTimeout(timer.current);
+    cancelAnimationFrame(rafRef.current);
+    setPressing(false);
+    setProgress(0);
+  }
+
+  useEffect(() => () => { clearTimeout(timer.current); cancelAnimationFrame(rafRef.current); }, []);
 
   return {
+    pressing,
+    progress,
     onMouseDown:  start,
     onMouseUp:    cancel,
     onMouseLeave: cancel,
@@ -134,6 +164,7 @@ function DeleteConfirm({ onConfirm, onCancel }) {
 function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const lp = useLongPress(() => setConfirmDelete(true));
+  const { pressing, progress } = lp;
 
   const friends = portrait.taggedIds
     .filter((id) => id !== activeChildId)
@@ -168,7 +199,7 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
         <div
           {...lp}
           onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
-          className="flex-1 bg-white rounded-3xl shadow-md shadow-indigo-100 overflow-hidden text-left mb-5 active:scale-[0.98] transition-transform cursor-pointer select-none"
+          className={`flex-1 bg-white rounded-3xl shadow-md shadow-indigo-100 overflow-hidden text-left mb-5 transition-transform cursor-pointer select-none ${pressing ? 'scale-[0.97]' : 'active:scale-[0.98]'}`}
         >
           {/* Header row */}
           <div className="px-4 pt-4 pb-2.5 flex items-start justify-between gap-2">
@@ -188,24 +219,47 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
             </div>
           </div>
 
-          {/* Photo */}
-          <div className="aspect-[4/3] overflow-hidden bg-indigo-100">
+          {/* Photo with delete overlay */}
+          <div className="aspect-[4/3] overflow-hidden bg-indigo-100 relative">
             <img
               src={portrait.photoUrl}
               alt={label}
               className="w-full h-full object-cover"
               loading="lazy"
             />
+            {/* Progress ring + trash shown while holding */}
+            {pressing && (
+              <div className="absolute inset-0 bg-rose-900/50 flex flex-col items-center justify-center gap-2">
+                <div className="relative w-16 h-16">
+                  <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                    <circle cx="32" cy="32" r="26" fill="none" stroke="white" strokeOpacity="0.25" strokeWidth="5" />
+                    <circle
+                      cx="32" cy="32" r="26" fill="none" stroke="white" strokeWidth="5"
+                      strokeDasharray={`${2 * Math.PI * 26}`}
+                      strokeDashoffset={`${2 * Math.PI * 26 * (1 - progress)}`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Trash2 size={22} className="text-white" />
+                  </div>
+                </div>
+                <span className="text-white font-black text-xs tracking-wide">Release to delete</span>
+              </div>
+            )}
           </div>
 
           {/* Notes + hint */}
-          <div className="px-4 pt-3 pb-3.5 flex items-end justify-between gap-2">
+          <div className="px-4 pt-3 pb-3.5 flex items-center justify-between gap-2">
             {portrait.notes ? (
               <p className="text-indigo-700 text-sm font-medium leading-snug">{portrait.notes}</p>
             ) : (
               <span />
             )}
-            <span className="text-[10px] font-semibold text-indigo-200 flex-shrink-0">Hold to delete</span>
+            <span className="flex items-center gap-1 text-[10px] font-bold text-rose-300 flex-shrink-0">
+              <Trash2 size={9} />
+              Hold to delete
+            </span>
           </div>
         </div>
       </div>
@@ -484,6 +538,7 @@ function ChildChip({ child, active, onClick, onLongPress }) {
 function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const lp = useLongPress(() => setConfirmDelete(true));
+  const { pressing, progress } = lp;
 
   const tagged  = portrait.taggedIds.map((id) => childrenList.find((c) => c.id === id)).filter(Boolean);
   const names   = tagged.map((c) => c.name).join(' & ') || 'Unnamed';
@@ -500,10 +555,29 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
       <div
         {...lp}
         onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
-        className="bg-white rounded-3xl shadow-lg shadow-indigo-100 overflow-hidden active:scale-95 transition-transform text-left w-full cursor-pointer select-none"
+        className={`bg-white rounded-3xl shadow-lg shadow-indigo-100 overflow-hidden transition-transform text-left w-full cursor-pointer select-none ${pressing ? 'scale-[0.96]' : 'active:scale-95'}`}
       >
-        <div className="aspect-[4/3] bg-indigo-100 overflow-hidden">
+        <div className="aspect-[4/3] bg-indigo-100 overflow-hidden relative">
           <img src={portrait.photoUrl} alt={names} className="w-full h-full object-cover" loading="lazy" />
+          {pressing && (
+            <div className="absolute inset-0 bg-rose-900/50 flex flex-col items-center justify-center gap-1.5">
+              <div className="relative w-12 h-12">
+                <svg className="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
+                  <circle cx="24" cy="24" r="19" fill="none" stroke="white" strokeOpacity="0.25" strokeWidth="4" />
+                  <circle
+                    cx="24" cy="24" r="19" fill="none" stroke="white" strokeWidth="4"
+                    strokeDasharray={`${2 * Math.PI * 19}`}
+                    strokeDashoffset={`${2 * Math.PI * 19 * (1 - progress)}`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Trash2 size={16} className="text-white" />
+                </div>
+              </div>
+              <span className="text-white font-black text-[10px] tracking-wide">Release to delete</span>
+            </div>
+          )}
         </div>
         <div className="p-3.5">
           <p className="font-black text-indigo-900 text-sm leading-tight">{names}</p>
@@ -511,7 +585,10 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
           {portrait.notes ? (
             <p className="text-indigo-600 text-xs mt-1.5 leading-snug line-clamp-2">{portrait.notes}</p>
           ) : null}
-          <p className="text-[10px] font-semibold text-indigo-200 mt-1.5">Hold to delete</p>
+          <p className="flex items-center gap-1 text-[10px] font-bold text-rose-300 mt-1.5">
+            <Trash2 size={8} />
+            Hold to delete
+          </p>
         </div>
       </div>
     </>
