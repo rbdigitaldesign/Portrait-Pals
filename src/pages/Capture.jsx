@@ -133,13 +133,13 @@ function FramingRules() {
   );
 }
 
-/* ─── Consent dot colours ─────────────────────────────────────────────── */
+/* ─── Consent status display ─────────────────────────────────────────── */
 
-const CONSENT_DOT = {
-  approved: 'bg-teal-400',
-  pending:  'bg-amber-400',
-  declined: 'bg-rose-500',
-  unlinked: 'bg-indigo-300',
+const CONSENT_INFO = {
+  approved: { dot: 'bg-teal-400',  label: 'Photos welcome'    },
+  pending:  { dot: 'bg-amber-400', label: 'Awaiting family'   },
+  declined: { dot: 'bg-rose-500',  label: 'Not in photos'     },
+  unlinked: { dot: 'bg-amber-400', label: 'Family not linked' },
 };
 
 /* ─── Capture page ────────────────────────────────────────────────────── */
@@ -159,9 +159,9 @@ export default function Capture() {
   const [selectedIds,  setSelectedIds]  = useState([]);
   const [notes,        setNotes]        = useState('');
   const [eventTag,     setEventTag]     = useState(null);
-  const [saving,       setSaving]       = useState(false);
-  const [saved,        setSaved]        = useState(false);
-  const [consentError, setConsentError] = useState('');
+  const [saving,        setSaving]        = useState(false);
+  const [saved,         setSaved]         = useState(false);
+  const [declinedToast, setDeclinedToast] = useState('');
 
   /* ── Camera lifecycle ── */
 
@@ -219,7 +219,7 @@ export default function Capture() {
     setSelectedIds([]);
     setNotes('');
     setEventTag(null);
-    setConsentError('');
+    setDeclinedToast('');
     startCamera(facingMode);
   }
 
@@ -235,7 +235,14 @@ export default function Capture() {
   /* ── Tagging ── */
 
   function toggleChild(id) {
-    setConsentError('');
+    const child = childrenList.find((c) => c.id === id);
+    if (child?.consentStatus === 'declined') {
+      setDeclinedToast(
+        `${child.name} is not in photos. They must be removed from this photo opportunity — please retake without them, or continue and don't tag them.`
+      );
+      setTimeout(() => setDeclinedToast(''), 5000);
+      return;
+    }
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
@@ -244,18 +251,9 @@ export default function Capture() {
   /* ── Save ── */
 
   function handleSave() {
-    // Consent gate: block if any tagged child has declined
     const taggedChildren = selectedIds.map((id) => childrenList.find((c) => c.id === id)).filter(Boolean);
-    const declined = taggedChildren.filter((c) => c.consentStatus === 'declined');
-    if (declined.length > 0) {
-      const names = declined.map((c) => c.name).join(', ');
-      setConsentError(
-        `${names} ${declined.length === 1 ? 'has' : 'have'} not consented to photos being saved. Remove them to continue.`
-      );
-      return;
-    }
 
-    // Build pendingConsent: pending/unlinked children + cross-parent tagged children without autoApprove
+    // Build pendingConsent: awaiting-family children + cross-parent tagged children without autoApprove
     const pendingIds = taggedChildren
       .filter((c) => c.consentStatus === 'pending' || c.consentStatus === 'unlinked')
       .map((c) => c.id);
@@ -292,6 +290,14 @@ export default function Capture() {
 
   return (
     <div className="h-dvh bg-indigo-950 flex flex-col overflow-hidden">
+
+      {/* ── Declined child floating toast ── */}
+      {declinedToast && (
+        <div className="fixed top-4 left-4 right-4 z-50 bg-rose-900 text-white rounded-2xl px-4 py-4 shadow-2xl flex items-start gap-3">
+          <span className="text-xl flex-shrink-0">🚫</span>
+          <p className="font-bold text-sm leading-snug">{declinedToast}</p>
+        </div>
+      )}
 
       {/* ── Saved toast ── */}
       {saved && (
@@ -408,14 +414,6 @@ export default function Capture() {
             </button>
           </div>
 
-          {/* Consent error */}
-          {consentError && (
-            <div className="bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 mb-3 flex items-start gap-2">
-              <span className="text-rose-500 text-base flex-shrink-0">🚫</span>
-              <p className="text-rose-700 font-bold text-sm leading-snug">{consentError}</p>
-            </div>
-          )}
-
           {/* Child checkboxes */}
           <div className="mb-3">
             <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
@@ -423,40 +421,43 @@ export default function Capture() {
             </p>
             <div className="grid grid-cols-2 gap-1.5">
               {childrenList.map((child) => {
-                const checked   = selectedIds.includes(child.id);
-                const status    = child.consentStatus ?? 'approved';
-                const dot       = CONSENT_DOT[status] ?? 'bg-indigo-300';
+                const checked    = selectedIds.includes(child.id);
+                const status     = child.consentStatus ?? 'approved';
+                const info       = CONSENT_INFO[status] ?? CONSENT_INFO.approved;
                 const isDeclined = status === 'declined';
                 return (
                   <button
                     key={child.id}
                     onClick={() => toggleChild(child.id)}
                     className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 font-bold text-sm transition-all active:scale-95 relative ${
-                      checked
-                        ? isDeclined
-                          ? 'bg-rose-100 text-rose-700 shadow-sm'
-                          : 'bg-rose-500 text-white shadow-md shadow-rose-200'
-                        : 'bg-white text-indigo-700 shadow-sm'
+                      isDeclined
+                        ? 'bg-rose-50 text-rose-400 opacity-70 cursor-not-allowed'
+                        : checked
+                          ? 'bg-rose-500 text-white shadow-md shadow-rose-200'
+                          : 'bg-white text-indigo-700 shadow-sm'
                     }`}
                   >
                     <div
                       className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                        checked ? 'border-white/60 bg-white/20' : 'border-indigo-200'
+                        isDeclined   ? 'border-rose-200'  :
+                        checked      ? 'border-white/60 bg-white/20' :
+                                       'border-indigo-200'
                       }`}
                     >
-                      {checked && <Check size={11} className="text-white" />}
+                      {isDeclined
+                        ? <span className="text-rose-400 text-[10px]">✕</span>
+                        : checked && <Check size={11} className="text-white" />}
                     </div>
                     <span className="flex-1 text-left truncate">{child.name}</span>
-                    {/* Consent status dot */}
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} title={status} />
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${info.dot}`} />
                   </button>
                 );
               })}
             </div>
-            <p className="text-[10px] text-indigo-300 font-semibold mt-2 flex items-center gap-2">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Approved</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Pending</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Declined</span>
+            <p className="text-[10px] text-indigo-300 font-semibold mt-2 flex items-center gap-2 flex-wrap">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Photos welcome</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Awaiting family</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Not in photos</span>
             </p>
           </div>
 
