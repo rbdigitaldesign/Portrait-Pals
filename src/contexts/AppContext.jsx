@@ -2,10 +2,11 @@ import { createContext, useContext, useState, useCallback } from 'react';
 import { ROOMS, CHILDREN, SEED_PORTRAITS, SEED_VERSION, ROOM_THRESHOLDS } from '../data/seed';
 
 const AppContext = createContext(null);
-const PORTRAITS_KEY = 'pp_portraits';
-const CHILDREN_KEY  = 'pp_children';
-const VERSION_KEY   = 'pp_seed_version';
-const AUDIT_KEY     = 'pp_audit_log';
+const PORTRAITS_KEY     = 'pp_portraits';
+const CHILDREN_KEY      = 'pp_children';
+const VERSION_KEY       = 'pp_seed_version';
+const AUDIT_KEY         = 'pp_audit_log';
+const NOTIFICATIONS_KEY = 'pp_notifications';
 
 function loadOrSeed(key, seed) {
   const storedVersion = localStorage.getItem(VERSION_KEY);
@@ -35,6 +36,14 @@ function writeAudit(action, detail) {
     const existing = JSON.parse(localStorage.getItem(AUDIT_KEY) || '[]');
     existing.push(entry);
     localStorage.setItem(AUDIT_KEY, JSON.stringify(existing));
+  } catch { /* non-fatal */ }
+}
+
+function writeNotification(type, data) {
+  try {
+    const existing = JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || '[]');
+    existing.push({ id: `n${Date.now()}`, ts: new Date().toISOString(), type, read: false, ...data });
+    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(existing));
   } catch { /* non-fatal */ }
 }
 
@@ -105,6 +114,7 @@ export function AppProvider({ children }) {
 
   const declinePortraitForChild = useCallback((portraitId, childId) => {
     setPortraits((prev) => {
+      const portrait = prev.find((p) => p.id === portraitId);
       const next = prev.map((p) => {
         if (p.id !== portraitId) return p;
         return {
@@ -114,9 +124,35 @@ export function AppProvider({ children }) {
         };
       });
       localStorage.setItem(PORTRAITS_KEY, JSON.stringify(next));
+
+      // Notify all other tagged children's parents that the photo was declined
+      if (portrait) {
+        const otherChildIds = (portrait.taggedIds ?? []).filter((id) => id !== childId);
+        if (otherChildIds.length > 0) {
+          writeNotification('PHOTO_DECLINED', {
+            portraitId,
+            declinedByChildId: childId,
+            recipientChildIds: otherChildIds,
+          });
+        }
+      }
+
       return next;
     });
     writeAudit('CONSENT_DECLINED', `Portrait: ${portraitId}, Child: ${childId}`);
+  }, []);
+
+  // Admin only: remove a child from declinedBy so the portrait reappears on all timelines
+  const reinstatePortrait = useCallback((portraitId) => {
+    setPortraits((prev) => {
+      const next = prev.map((p) => {
+        if (p.id !== portraitId) return p;
+        return { ...p, declinedBy: [] };
+      });
+      localStorage.setItem(PORTRAITS_KEY, JSON.stringify(next));
+      return next;
+    });
+    writeAudit('PORTRAIT_REINSTATED', `Portrait: ${portraitId}`);
   }, []);
 
   return (
@@ -130,6 +166,7 @@ export function AppProvider({ children }) {
       deletePortrait,
       approvePortraitForChild,
       declinePortraitForChild,
+      reinstatePortrait,
       logAudit,
     }}>
       {children}

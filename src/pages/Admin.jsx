@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Download, Mail, Clock } from 'lucide-react';
+import { LogOut, Download, Mail, Clock, RotateCcw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useApp } from '../contexts/AppContext';
 
 const AUDIT_KEY = 'pp_audit_log';
 
@@ -12,8 +13,9 @@ const ACTION_STYLES = {
   DELETE_PORTRAIT:  'bg-rose-50    text-rose-700',
   UPDATE_CHILD:     'bg-amber-50   text-amber-700',
   DOWNLOAD_PHOTO:   'bg-purple-50  text-purple-700',
-  CONSENT_GRANTED:  'bg-green-50   text-green-700',
-  CONSENT_DECLINED: 'bg-orange-50  text-orange-700',
+  CONSENT_GRANTED:      'bg-green-50   text-green-700',
+  CONSENT_DECLINED:     'bg-orange-50  text-orange-700',
+  PORTRAIT_REINSTATED:  'bg-violet-50  text-violet-700',
 };
 
 const CONSENT_STATUS_STYLE = {
@@ -175,10 +177,102 @@ function PendingConsentPanel({ children, portraits }) {
   );
 }
 
+/* ─── Declined Photos Panel ───────────────────────────────────────────── */
+
+function downloadPhoto(photoUrl, portraitId) {
+  const a = document.createElement('a');
+  a.href = photoUrl;
+  a.download = `portrait-pals-${portraitId}.jpg`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function DeclinedPhotosPanel({ portraits, children, onReinstate }) {
+  const declined = portraits.filter((p) => (p.declinedBy?.length ?? 0) > 0);
+
+  return (
+    <div className="bg-white rounded-3xl shadow-md shadow-indigo-100 overflow-hidden">
+      <div className="px-5 pt-5 pb-4 border-b border-rose-100 flex items-center justify-between">
+        <div>
+          <h2 className="font-black text-indigo-900 text-base">Declined Photos</h2>
+          <p className="text-xs font-semibold text-indigo-400 mt-0.5">
+            Photos removed from timelines — reinstate after discussion with families
+          </p>
+        </div>
+        {declined.length > 0 && (
+          <span className="bg-rose-500 text-white font-black text-sm w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0">
+            {declined.length}
+          </span>
+        )}
+      </div>
+
+      {declined.length === 0 ? (
+        <p className="text-sm font-semibold text-indigo-300 px-5 py-5">No declined photos ✓</p>
+      ) : (
+        <div className="divide-y divide-rose-50">
+          {declined.map((portrait) => {
+            const tagged = (portrait.taggedIds ?? [])
+              .map((id) => children.find((c) => c.id === id))
+              .filter(Boolean);
+            const decliners = (portrait.declinedBy ?? [])
+              .map((id) => children.find((c) => c.id === id))
+              .filter(Boolean);
+
+            return (
+              <div key={portrait.id} className="flex items-start gap-4 px-5 py-4">
+                {portrait.photoUrl && (
+                  <img
+                    src={portrait.photoUrl}
+                    alt=""
+                    className="w-16 h-16 rounded-2xl object-cover flex-shrink-0 bg-indigo-100"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-black text-indigo-900 text-sm leading-tight">
+                    {tagged.map((c) => c.name).join(' & ') || 'Unknown children'}
+                  </p>
+                  <p className="text-xs font-semibold text-indigo-400 mt-0.5">
+                    {formatDateShort(portrait.date)}{portrait.notes ? ` · ${portrait.notes}` : ''}
+                  </p>
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {decliners.map((c) => (
+                      <span key={c.id} className="bg-rose-100 text-rose-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                        Declined by {c.name}'s family
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    {portrait.photoUrl && (
+                      <button
+                        onClick={() => downloadPhoto(portrait.photoUrl, portrait.id)}
+                        className="flex items-center gap-1.5 bg-indigo-50 text-indigo-600 font-bold text-xs rounded-xl px-3 py-2 active:scale-95 transition-transform"
+                      >
+                        <Download size={12} /> Download
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onReinstate(portrait.id)}
+                      className="flex items-center gap-1.5 bg-teal-50 text-teal-600 font-bold text-xs rounded-xl px-3 py-2 active:scale-95 transition-transform"
+                    >
+                      <RotateCcw size={12} /> Reinstate
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Admin page ──────────────────────────────────────────────────────── */
 
 export default function Admin() {
   const { user, logout } = useAuth();
+  const { reinstatePortrait } = useApp();
   const navigate = useNavigate();
   const [filterAction, setFilterAction] = useState('');
   const [filterUser,   setFilterUser]   = useState('');
@@ -262,6 +356,13 @@ export default function Admin() {
 
         {/* Pending consent detail */}
         <PendingConsentPanel children={children} portraits={portraits} />
+
+        {/* Declined photos */}
+        <DeclinedPhotosPanel
+          portraits={portraits}
+          children={children}
+          onReinstate={reinstatePortrait}
+        />
 
         {/* Filters + CSV download */}
         <div className="bg-white rounded-3xl p-5 shadow-md shadow-indigo-100">
