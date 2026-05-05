@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2, Shield } from 'lucide-react';
+import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2, Shield, Bell } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp, calcRoomForAge } from '../contexts/AppContext';
 import { EVENT_TAGS } from '../data/seed';
@@ -695,16 +695,38 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
   const [privacyDismissed,  setPrivacyDismissed]  = useState(
     () => sessionStorage.getItem('pp_privacy_banner') === '1'
   );
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const myChildIds = user.childIds ?? [];
+
+  // Notifications addressed to any of this parent's children
+  const allNotifications = (() => {
+    try { return JSON.parse(localStorage.getItem('pp_notifications') || '[]'); } catch { return []; }
+  })();
+  const myNotifications = allNotifications
+    .filter((n) => (n.recipientChildIds ?? []).some((id) => myChildIds.includes(id)))
+    .sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  const unreadCount = myNotifications.filter((n) => !n.read).length;
+
+  function markAllRead() {
+    try {
+      const updated = allNotifications.map((n) =>
+        (n.recipientChildIds ?? []).some((id) => myChildIds.includes(id)) ? { ...n, read: true } : n
+      );
+      localStorage.setItem('pp_notifications', JSON.stringify(updated));
+    } catch { /* non-fatal */ }
+  }
 
   const activeChild = childrenList.find((c) => c.id === activeId);
 
-  // Portraits visible to this child (excluding pending/declined for this child)
+  // Portraits visible to this child — hidden if this child is pending/declined,
+  // OR if any other tagged child has declined (photo removed from all timelines)
   const childPortraits = portraits
     .filter((p) =>
       p.taggedIds.includes(activeId) &&
       (p.source === 'school' || p.source === 'parent') &&
       !p.pendingConsent?.includes(activeId) &&
-      !p.declinedBy?.includes(activeId)
+      !(p.declinedBy?.length > 0)
     )
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -778,14 +800,65 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
               Parent Timeline
             </p>
           </div>
-          <button
-            onClick={logout}
-            className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center text-indigo-400 active:scale-90 transition-transform"
-            aria-label="Sign out"
-          >
-            <LogOut size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setShowNotifications((v) => !v); if (unreadCount > 0) markAllRead(); }}
+              className="relative w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center text-indigo-400 active:scale-90 transition-transform"
+              aria-label="Notifications"
+            >
+              <Bell size={18} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={logout}
+              className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center text-indigo-400 active:scale-90 transition-transform"
+              aria-label="Sign out"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
+
+        {/* Notifications panel */}
+        {showNotifications && (
+          <div className="mt-3 bg-indigo-50 rounded-2xl overflow-hidden">
+            <p className="text-[10px] font-extrabold text-indigo-400 uppercase tracking-widest px-4 pt-3 pb-2">
+              Notifications
+            </p>
+            {myNotifications.length === 0 ? (
+              <p className="text-sm font-semibold text-indigo-300 px-4 pb-3">No notifications yet</p>
+            ) : (
+              <div className="space-y-0 divide-y divide-indigo-100">
+                {myNotifications.map((n) => {
+                  const recipientNames = (n.recipientChildIds ?? [])
+                    .map((id) => childrenList.find((c) => c.id === id)?.name)
+                    .filter(Boolean).join(' & ');
+                  const declinerName = childrenList.find((c) => c.id === n.declinedByChildId)?.name ?? 'Another family';
+                  return (
+                    <div key={n.id} className="flex items-start gap-3 px-4 py-3">
+                      <span className="text-base mt-0.5">🔔</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-indigo-900 leading-snug">
+                          A photo of {recipientNames} was removed
+                        </p>
+                        <p className="text-xs font-semibold text-indigo-400 mt-0.5 leading-snug">
+                          {declinerName}'s family declined the photo — it has been removed from all timelines. If you have a concern, contact your educator.
+                        </p>
+                        <p className="text-[10px] text-indigo-300 mt-1">
+                          {new Date(n.ts).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Child switcher + add child */}
         <div className="flex gap-2 mt-3 overflow-x-auto scrollbar-none">
