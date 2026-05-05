@@ -237,10 +237,15 @@ export default function Capture() {
   function toggleChild(id) {
     const child = childrenList.find((c) => c.id === id);
     if (child?.consentStatus === 'declined') {
-      setDeclinedToast(
-        `${child.name} is not in photos. They must be removed from this photo opportunity — please retake without them, or continue and don't tag them.`
-      );
-      setTimeout(() => setDeclinedToast(''), 5000);
+      if (!selectedIds.includes(id)) {
+        // Lock them in — can only exit by retaking
+        setSelectedIds((prev) => [...prev, id]);
+        setDeclinedToast(
+          `${child.name} is not in photos. You must retake this photo without them.`
+        );
+        setTimeout(() => setDeclinedToast(''), 5000);
+      }
+      // Already tagged — tapping again does nothing (retake is the only exit)
       return;
     }
     setSelectedIds((prev) =>
@@ -404,62 +409,89 @@ export default function Capture() {
       {/* ── Post-capture form ── */}
       {captured && (
         <div className="bg-amber-50 rounded-t-3xl flex-1 min-h-0 overflow-y-auto px-5 pt-4 pb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-black text-xl text-indigo-900">New Portrait</h2>
-            <button
-              onClick={handleRetake}
-              className="flex items-center gap-1.5 bg-white rounded-2xl px-3.5 py-2 text-indigo-500 font-bold text-sm shadow-sm active:scale-95 transition-transform"
-            >
-              <RotateCcw size={14} /> Retake
-            </button>
-          </div>
+          {/* Header — Retake becomes the primary CTA when a declined child is locked in */}
+          {(() => {
+            const hasDeclined = selectedIds.some((id) => {
+              const c = childrenList.find((ch) => ch.id === id);
+              return c?.consentStatus === 'declined';
+            });
+            return (
+              <div className={`flex items-center justify-between mb-3 ${hasDeclined ? 'flex-col gap-3' : ''}`}>
+                <h2 className="font-black text-xl text-indigo-900 self-start">New Portrait</h2>
+                {hasDeclined ? (
+                  <button
+                    onClick={handleRetake}
+                    className="w-full flex items-center justify-center gap-2 bg-rose-500 text-white rounded-2xl px-4 py-3.5 font-black text-base shadow-lg shadow-rose-200 active:scale-95 transition-transform"
+                  >
+                    <RotateCcw size={16} /> Retake photo without them
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleRetake}
+                    className="flex items-center gap-1.5 bg-white rounded-2xl px-3.5 py-2 text-indigo-500 font-bold text-sm shadow-sm active:scale-95 transition-transform"
+                  >
+                    <RotateCcw size={14} /> Retake
+                  </button>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Child checkboxes */}
-          <div className="mb-3">
-            <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
-              Who's in this photo?
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {childrenList.map((child) => {
-                const checked    = selectedIds.includes(child.id);
-                const status     = child.consentStatus ?? 'approved';
-                const info       = CONSENT_INFO[status] ?? CONSENT_INFO.approved;
-                const isDeclined = status === 'declined';
-                return (
-                  <button
-                    key={child.id}
-                    onClick={() => toggleChild(child.id)}
-                    className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 font-bold text-sm transition-all active:scale-95 relative ${
-                      isDeclined
-                        ? 'bg-rose-50 text-rose-400 opacity-70 cursor-not-allowed'
-                        : checked
-                          ? 'bg-rose-500 text-white shadow-md shadow-rose-200'
-                          : 'bg-white text-indigo-700 shadow-sm'
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                        isDeclined   ? 'border-rose-200'  :
-                        checked      ? 'border-white/60 bg-white/20' :
+          {(() => {
+            const hasDeclined = selectedIds.some((id) => {
+              const c = childrenList.find((ch) => ch.id === id);
+              return c?.consentStatus === 'declined';
+            });
+            return (
+              <div className="mb-3">
+                <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
+                  Who's in this photo?
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {childrenList.map((child) => {
+                    const checked    = selectedIds.includes(child.id);
+                    const status     = child.consentStatus ?? 'approved';
+                    const info       = CONSENT_INFO[status] ?? CONSENT_INFO.approved;
+                    const isDeclined = status === 'declined';
+                    const lockedIn   = isDeclined && checked;
+                    return (
+                      <button
+                        key={child.id}
+                        onClick={() => toggleChild(child.id)}
+                        className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 font-bold text-sm transition-all select-none ${
+                          lockedIn
+                            ? 'bg-rose-600 text-white shadow-md ring-2 ring-rose-300 cursor-default'
+                            : checked
+                              ? 'bg-rose-500 text-white shadow-md shadow-rose-200 active:scale-95'
+                              : 'bg-white text-indigo-700 shadow-sm active:scale-95'
+                        }`}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center flex-shrink-0 ${
+                            lockedIn ? 'border-white/50 bg-white/20' :
+                            checked  ? 'border-white/60 bg-white/20' :
                                        'border-indigo-200'
-                      }`}
-                    >
-                      {isDeclined
-                        ? <span className="text-rose-400 text-[10px]">✕</span>
-                        : checked && <Check size={11} className="text-white" />}
-                    </div>
-                    <span className="flex-1 text-left truncate">{child.name}</span>
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${info.dot}`} />
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[10px] text-indigo-300 font-semibold mt-2 flex items-center gap-2 flex-wrap">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Photos welcome</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Awaiting family</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Not in photos</span>
-            </p>
-          </div>
+                          }`}
+                        >
+                          {lockedIn
+                            ? <span className="text-white text-[11px] font-black">✕</span>
+                            : checked && <Check size={11} className="text-white" />}
+                        </div>
+                        <span className="flex-1 text-left truncate">{child.name}</span>
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${info.dot}`} />
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-indigo-300 font-semibold mt-2 flex items-center gap-2 flex-wrap">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Photos welcome</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Awaiting family</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Not in photos</span>
+                </p>
+              </div>
+            );
+          })()}
 
           {/* Event tag picker */}
           <div className="mb-3">
@@ -498,18 +530,33 @@ export default function Capture() {
           </div>
 
           {/* Save */}
-          <button
-            onClick={handleSave}
-            disabled={saving || selectedIds.length === 0}
-            className="w-full bg-rose-500 text-white font-black text-lg rounded-2xl py-4 shadow-lg shadow-rose-200 active:scale-95 transition-transform disabled:opacity-50"
-          >
-            {saving ? 'Saving…' : 'Save Portrait'}
-          </button>
-          {selectedIds.length === 0 && (
-            <p className="text-center text-xs text-indigo-400 font-semibold mt-2.5">
-              Tag at least one child to save
-            </p>
-          )}
+          {(() => {
+            const hasDeclined = selectedIds.some((id) => {
+              const c = childrenList.find((ch) => ch.id === id);
+              return c?.consentStatus === 'declined';
+            });
+            return (
+              <>
+                <button
+                  onClick={handleSave}
+                  disabled={saving || selectedIds.length === 0 || hasDeclined}
+                  className="w-full bg-rose-500 text-white font-black text-lg rounded-2xl py-4 shadow-lg shadow-rose-200 active:scale-95 transition-transform disabled:opacity-40"
+                >
+                  {saving ? 'Saving…' : 'Save Portrait'}
+                </button>
+                {hasDeclined && (
+                  <p className="text-center text-xs text-rose-500 font-bold mt-2.5">
+                    Retake required — photo includes a child who is not in photos
+                  </p>
+                )}
+                {!hasDeclined && selectedIds.length === 0 && (
+                  <p className="text-center text-xs text-indigo-400 font-semibold mt-2.5">
+                    Tag at least one child to save
+                  </p>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
     </div>
