@@ -151,10 +151,10 @@ const CONSENT_DOT = {
 };
 
 const CONSENT_LABEL = {
-  approved: 'Photos welcome',
-  pending:  'Awaiting family',
-  declined: 'Not in photos',
-  unlinked: 'Family not linked',
+  approved: 'Photos approved',
+  pending:  'Pending photo approval',
+  declined: 'Photos declined',
+  unlinked: 'Pending photo approval',
 };
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -1218,9 +1218,9 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
         {/* Consent dot legend */}
         <p className="text-[10px] font-semibold text-indigo-300 mb-1 tracking-wide flex items-center gap-3 flex-wrap">
           <span>Hold to edit</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Photos welcome</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Awaiting family</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Not in photos</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Photos approved</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Pending approval</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Photos declined</span>
         </p>
 
         {/* Event tag filter */}

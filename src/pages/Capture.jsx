@@ -136,10 +136,10 @@ function FramingRules() {
 /* ─── Consent status display ─────────────────────────────────────────── */
 
 const CONSENT_INFO = {
-  approved: { dot: 'bg-teal-400',  label: 'Photos welcome'    },
-  pending:  { dot: 'bg-amber-400', label: 'Awaiting family'   },
-  declined: { dot: 'bg-rose-500',  label: 'Not in photos'     },
-  unlinked: { dot: 'bg-amber-400', label: 'Family not linked' },
+  approved: { dot: 'bg-teal-400',  label: 'Photos approved'        },
+  pending:  { dot: 'bg-amber-400', label: 'Pending photo approval' },
+  declined: { dot: 'bg-rose-500',  label: 'Photos declined'        },
+  unlinked: { dot: 'bg-amber-400', label: 'Pending photo approval' },
 };
 
 /* ─── Capture page ────────────────────────────────────────────────────── */
@@ -449,7 +449,7 @@ export default function Capture() {
                   Who's in this photo?
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
-                  {childrenList.map((child) => {
+                  {[...childrenList].sort((a, b) => a.name.localeCompare(b.name)).map((child) => {
                     const checked    = selectedIds.includes(child.id);
                     const status     = child.consentStatus ?? 'approved';
                     const info       = CONSENT_INFO[status] ?? CONSENT_INFO.approved;
@@ -485,9 +485,9 @@ export default function Capture() {
                   })}
                 </div>
                 <p className="text-[10px] text-indigo-300 font-semibold mt-2 flex items-center gap-2 flex-wrap">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Photos welcome</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Awaiting family</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Not in photos</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Photos approved</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Pending approval</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Photos declined</span>
                 </p>
               </div>
             );
