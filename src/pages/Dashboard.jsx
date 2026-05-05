@@ -496,7 +496,8 @@ function AddChildModal({ rooms, onClose, onAdd, hideRoom = false, userRole = 'ed
 
 /* ─── Event tag filter strip ─────────────────────────────────────────────── */
 
-function EventTagFilter({ selected, onSelect }) {
+function EventTagFilter({ selected, onSelect, exclude = [] }) {
+  const tags = EVENT_TAGS.filter((t) => !exclude.includes(t.id));
   return (
     <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
       <button
@@ -507,7 +508,7 @@ function EventTagFilter({ selected, onSelect }) {
       >
         All
       </button>
-      {EVENT_TAGS.map((tag) => (
+      {tags.map((tag) => (
         <button
           key={tag.id}
           onClick={() => onSelect(selected === tag.id ? null : tag.id)}
@@ -1337,9 +1338,9 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Photos declined</span>
         </p>
 
-        {/* Event tag filter */}
+        {/* Event tag filter — Family Moment excluded (parent-only, not visible to educators) */}
         <div className="mt-3 mb-1">
-          <EventTagFilter selected={selectedEventTag} onSelect={setSelectedEventTag} />
+          <EventTagFilter selected={selectedEventTag} onSelect={setSelectedEventTag} exclude={['family']} />
         </div>
 
         {/* Section heading */}
