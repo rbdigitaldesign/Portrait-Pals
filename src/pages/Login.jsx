@@ -46,6 +46,7 @@ function PhotoHero() {
       ))}
 
       {/* ── Polaroid — top left ── */}
+      <g style={{ animation: 'ppFloat 4s ease-in-out infinite', animationDelay: '0s' }}>
       <g transform="translate(52,42) rotate(-18)" filter="url(#pshadow)">
         <rect x="-34" y="-44" width="68" height="84" rx="4" fill="white" />
         {/* photo area — warm yellow, sun */}
@@ -61,8 +62,10 @@ function PhotoHero() {
         <rect x="-16" y="18" width="32" height="2.5" rx="1.2" fill="#e5e7eb" />
         <rect x="-10" y="23" width="20" height="2" rx="1" fill="#f3f4f6" />
       </g>
+      </g>
 
       {/* ── Polaroid — top right ── */}
+      <g style={{ animation: 'ppFloat 4.5s ease-in-out infinite', animationDelay: '0.7s' }}>
       <g transform="translate(326,36) rotate(16)" filter="url(#pshadow)">
         <rect x="-34" y="-44" width="68" height="84" rx="4" fill="white" />
         {/* photo area — rose, heart */}
@@ -72,8 +75,10 @@ function PhotoHero() {
         <rect x="-16" y="18" width="32" height="2.5" rx="1.2" fill="#e5e7eb" />
         <rect x="-10" y="23" width="20" height="2" rx="1" fill="#f3f4f6" />
       </g>
+      </g>
 
       {/* ── Polaroid — bottom left ── */}
+      <g style={{ animation: 'ppFloat 5s ease-in-out infinite', animationDelay: '1.4s' }}>
       <g transform="translate(46,186) rotate(14)" filter="url(#pshadow)">
         <rect x="-34" y="-44" width="68" height="84" rx="4" fill="white" />
         {/* photo area — teal, star */}
@@ -84,7 +89,10 @@ function PhotoHero() {
         <rect x="-10" y="23" width="20" height="2" rx="1" fill="#f3f4f6" />
       </g>
 
+      </g>
+
       {/* ── Polaroid — bottom right ── */}
+      <g style={{ animation: 'ppFloat 4.2s ease-in-out infinite', animationDelay: '2.1s' }}>
       <g transform="translate(330,182) rotate(-13)" filter="url(#pshadow)">
         <rect x="-34" y="-44" width="68" height="84" rx="4" fill="white" />
         {/* photo area — violet, flower */}
@@ -98,8 +106,10 @@ function PhotoHero() {
         <rect x="-16" y="18" width="32" height="2.5" rx="1.2" fill="#e5e7eb" />
         <rect x="-10" y="23" width="20" height="2" rx="1" fill="#f3f4f6" />
       </g>
+      </g>
 
       {/* ── Camera body ── */}
+      <g style={{ animation: 'ppFloatCam 5.5s ease-in-out infinite', animationDelay: '0.3s' }}>
       <g transform="translate(130,72)" filter="url(#cshadow)">
         {/* Body */}
         <rect x="0" y="20" width="120" height="72" rx="13" fill="#0ea5e9" />
@@ -148,9 +158,10 @@ function PhotoHero() {
         <rect x="-5" y="30" width="8" height="16" rx="3" fill="#0369a1" />
         <rect x="117" y="30" width="8" height="16" rx="3" fill="#0369a1" />
       </g>
+      </g>
 
       {/* ── Flash burst (snap! sparkle) ── */}
-      <g transform="translate(152,70)" opacity="0.75">
+      <g transform="translate(152,70)" style={{ animation: 'ppFlash 3s ease-in-out infinite', animationDelay: '1.2s' }}>
         {[0,45,90,135].map(a => (
           <line key={a}
             x1={Math.cos(a*Math.PI/180)*4} y1={Math.sin(a*Math.PI/180)*4}
@@ -162,14 +173,15 @@ function PhotoHero() {
 
       {/* ── Scattered sparkles ── */}
       {[
-        { x:170, y:20,  c:'#f43f5e', s:7  },
-        { x:218, y:15,  c:'#fb923c', s:5  },
-        { x:155, y:205, c:'#4ade80', s:6  },
-        { x:222, y:208, c:'#c084fc', s:5  },
-        { x:136, y:115, c:'#60a5fa', s:4  },
-        { x:246, y:108, c:'#fbbf24', s:4.5},
-      ].map(({ x, y, c, s }, i) => (
-        <g key={i} transform={`translate(${x},${y})`} opacity="0.65">
+        { x:170, y:20,  c:'#f43f5e', s:7,   delay:'0s'    },
+        { x:218, y:15,  c:'#fb923c', s:5,   delay:'0.6s'  },
+        { x:155, y:205, c:'#4ade80', s:6,   delay:'1.2s'  },
+        { x:222, y:208, c:'#c084fc', s:5,   delay:'1.8s'  },
+        { x:136, y:115, c:'#60a5fa', s:4,   delay:'0.3s'  },
+        { x:246, y:108, c:'#fbbf24', s:4.5, delay:'0.9s'  },
+      ].map(({ x, y, c, s, delay }, i) => (
+        <g key={i} transform={`translate(${x},${y})`}
+          style={{ animation: 'ppTwinkle 2.5s ease-in-out infinite', animationDelay: delay }}>
           <line x1="0" y1={-s} x2="0" y2={s} stroke={c} strokeWidth="2" strokeLinecap="round" />
           <line x1={-s} y1="0" x2={s} y2="0" stroke={c} strokeWidth="2" strokeLinecap="round" />
         </g>
@@ -250,6 +262,16 @@ export default function Login() {
   }
 
   return (
+    <>
+    <style>{`
+      @keyframes ppFloat    { 0%,100%{transform:translateY(0)}    50%{transform:translateY(-6px)} }
+      @keyframes ppFloatCam { 0%,100%{transform:translateY(0)}    50%{transform:translateY(-4px)} }
+      @keyframes ppTwinkle  { 0%,100%{opacity:.65;transform:scale(1)}  50%{opacity:1;transform:scale(1.35)} }
+      @keyframes ppFlash    { 0%,70%,100%{opacity:.75;transform:scale(1)} 35%{opacity:1;transform:scale(1.25)} }
+      @keyframes ppHeart    { 0%,100%{transform:scale(1)} 15%{transform:scale(1.2)} 30%{transform:scale(1)} 50%{transform:scale(1.1)} }
+      @keyframes ppSway     { 0%,100%{transform:rotate(0deg)} 30%{transform:rotate(3deg)} 70%{transform:rotate(-3deg)} }
+      @keyframes ppSparkle  { 0%,100%{transform:scale(1) rotate(0deg)} 50%{transform:scale(1.4) rotate(20deg)} }
+    `}</style>
     <div
       className="min-h-screen flex flex-col items-center overflow-x-hidden pb-10"
       style={{ background: 'linear-gradient(180deg, #e0f2fe 0%, #fef9c3 45%, #fffbeb 100%)' }}
@@ -262,24 +284,24 @@ export default function Login() {
 
       {/* ── Title ── */}
       <div className="relative flex flex-col items-center px-5 pb-1 text-center -mt-2">
-        <Sparkle className="absolute -left-1 top-0 w-5 h-5 text-yellow-400" />
-        <Sparkle className="absolute right-3 top-2 w-4 h-4 text-rose-400" />
+        <Sparkle className="absolute -left-1 top-0 w-5 h-5 text-yellow-400" style={{ animation: 'ppSparkle 3s ease-in-out infinite', animationDelay: '0s' }} />
+        <Sparkle className="absolute right-3 top-2 w-4 h-4 text-rose-400"  style={{ animation: 'ppSparkle 3s ease-in-out infinite', animationDelay: '1.5s' }} />
 
         <div className="flex items-center gap-3 mb-1">
-          <Heart className="w-7 h-7 text-rose-400 drop-shadow-sm" />
+          <Heart className="w-7 h-7 text-rose-400 drop-shadow-sm" style={{ animation: 'ppHeart 2.5s ease-in-out infinite', animationDelay: '0s' }} />
           <h1
             className="font-black text-indigo-900 leading-none tracking-tight"
             style={{ fontSize: 'clamp(2.2rem, 9vw, 3rem)' }}
           >
             Portrait Pals
           </h1>
-          <Heart className="w-7 h-7 text-rose-400 drop-shadow-sm" />
+          <Heart className="w-7 h-7 text-rose-400 drop-shadow-sm" style={{ animation: 'ppHeart 2.5s ease-in-out infinite', animationDelay: '0.4s' }} />
         </div>
 
         <p className="text-indigo-500 font-bold text-sm mt-1.5 flex items-center gap-1.5">
-          <Sparkle className="w-3 h-3 text-yellow-400 inline-block" />
+          <Sparkle className="w-3 h-3 text-yellow-400 inline-block" style={{ animation: 'ppSparkle 2.8s ease-in-out infinite', animationDelay: '0.8s' }} />
           Little friendships, captured forever
-          <Sparkle className="w-3 h-3 text-yellow-400 inline-block" />
+          <Sparkle className="w-3 h-3 text-yellow-400 inline-block" style={{ animation: 'ppSparkle 2.8s ease-in-out infinite', animationDelay: '2.2s' }} />
         </p>
         <p className="text-indigo-400 text-xs font-semibold mt-2.5 max-w-[260px] text-center leading-relaxed">
           A private, family-controlled alternative to sharing children's photos on social media.
@@ -289,7 +311,14 @@ export default function Login() {
       {/* ── Crayon row ── */}
       <div className="flex items-end justify-center gap-1 mt-5 mb-5 px-2" style={{ height: '82px' }}>
         {CRAYONS.map(({ color, accent, rotate }, i) => (
-          <Crayon key={i} color={color} accent={accent} rotate={rotate} className="w-9 h-full" />
+          <div key={i} style={{
+            animation: 'ppSway 3s ease-in-out infinite',
+            animationDelay: `${i * 0.18}s`,
+            transformOrigin: 'bottom center',
+            height: '100%',
+          }}>
+            <Crayon color={color} accent={accent} rotate={rotate} className="w-9 h-full" />
+          </div>
         ))}
       </div>
 
@@ -425,5 +454,6 @@ export default function Login() {
         </div>
       </div>
     </div>
+    </>
   );
 }
