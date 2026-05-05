@@ -142,11 +142,19 @@ function funTitle(portrait) {
   return FUN_TITLES[seed % FUN_TITLES.length];
 }
 
+// unlinked is treated same as pending (amber) — both mean "family not yet confirmed"
 const CONSENT_DOT = {
   approved: 'bg-teal-400',
   pending:  'bg-amber-400',
   declined: 'bg-rose-500',
-  unlinked: 'bg-indigo-300',
+  unlinked: 'bg-amber-400',
+};
+
+const CONSENT_LABEL = {
+  approved: 'Photos welcome',
+  pending:  'Awaiting family',
+  declined: 'Not in photos',
+  unlinked: 'Family not linked',
 };
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -198,7 +206,9 @@ function ChildPill({ child, active, onClick, onLongPress }) {
 
 function ChildChip({ child, active, onClick, onLongPress }) {
   const lp = useLongPress(onLongPress ?? (() => {}), 600);
-  const dot = CONSENT_DOT[child.consentStatus ?? 'approved'] ?? 'bg-indigo-300';
+  const status = child.consentStatus ?? 'approved';
+  const dot    = CONSENT_DOT[status] ?? 'bg-amber-400';
+  const label  = CONSENT_LABEL[status] ?? 'Awaiting family';
   return (
     <button
       {...lp}
@@ -223,7 +233,7 @@ function ChildChip({ child, active, onClick, onLongPress }) {
           <Pencil size={9} className="text-indigo-400" />
         </div>
         {/* Consent dot */}
-        <div className={`absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full border-2 border-white ${dot}`} />
+        <div className={`absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full border-2 border-white ${dot}`} title={label} />
       </div>
       <span className="text-xs font-bold text-indigo-700 w-16 text-center leading-tight">
         {child.name}
@@ -994,7 +1004,7 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
   const names   = tagged.map((c) => c.name).join(' & ') || 'Unnamed';
   const dateStr = formatDate(portrait.date);
   const eventTag = EVENT_TAGS.find((t) => t.id === portrait.eventTag);
-  const hasPending = (portrait.pendingConsent?.length ?? 0) > 0;
+  const hasPending = false; // hidden from educator grid; badge kept for future admin use
 
   return (
     <>
@@ -1103,6 +1113,8 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
   const filteredPortraits = portraits
     .filter((p) => {
       if (p.source !== 'school') return false;
+      // Hide portraits that are still awaiting family consent — visible only via admin
+      if ((p.pendingConsent?.length ?? 0) > 0) return false;
       const inView = p.taggedIds.some((id) => visibleChildren.some((c) => c.id === id));
       if (!inView) return false;
       if (selectedChildId && !p.taggedIds.includes(selectedChildId)) return false;
@@ -1204,11 +1216,11 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
         </div>
 
         {/* Consent dot legend */}
-        <p className="text-[10px] font-semibold text-indigo-300 mb-1 tracking-wide flex items-center gap-3">
+        <p className="text-[10px] font-semibold text-indigo-300 mb-1 tracking-wide flex items-center gap-3 flex-wrap">
           <span>Hold to edit</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Consented</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Pending</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Declined</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Photos welcome</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Awaiting family</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Not in photos</span>
         </p>
 
         {/* Event tag filter */}
