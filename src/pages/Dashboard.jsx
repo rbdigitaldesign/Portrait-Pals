@@ -825,39 +825,42 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
 
         {/* Notifications panel */}
         {showNotifications && (
-          <div className="mt-3 bg-indigo-50 rounded-2xl overflow-hidden">
-            <p className="text-[10px] font-extrabold text-indigo-400 uppercase tracking-widest px-4 pt-3 pb-2">
-              Notifications
-            </p>
-            {myNotifications.length === 0 ? (
-              <p className="text-sm font-semibold text-indigo-300 px-4 pb-3">No notifications yet</p>
-            ) : (
-              <div className="space-y-0 divide-y divide-indigo-100">
-                {myNotifications.map((n) => {
-                  const recipientNames = (n.recipientChildIds ?? [])
-                    .map((id) => childrenList.find((c) => c.id === id)?.name)
-                    .filter(Boolean).join(' & ');
-                  const declinerName = childrenList.find((c) => c.id === n.declinedByChildId)?.name ?? 'Another family';
-                  return (
-                    <div key={n.id} className="flex items-start gap-3 px-4 py-3">
-                      <span className="text-base mt-0.5">🔔</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-indigo-900 leading-snug">
-                          A photo of {recipientNames} was removed
-                        </p>
-                        <p className="text-xs font-semibold text-indigo-400 mt-0.5 leading-snug">
-                          {declinerName}'s family declined the photo — it has been removed from all timelines. If you have a concern, contact your educator.
-                        </p>
-                        <p className="text-[10px] text-indigo-300 mt-1">
-                          {new Date(n.ts).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}
-                        </p>
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setShowNotifications(false)} />
+            <div className="relative z-20 mt-3 bg-indigo-50 rounded-2xl overflow-hidden">
+              <p className="text-[10px] font-extrabold text-indigo-400 uppercase tracking-widest px-4 pt-3 pb-2">
+                Notifications
+              </p>
+              {myNotifications.length === 0 ? (
+                <p className="text-sm font-semibold text-indigo-300 px-4 pb-3">No notifications yet</p>
+              ) : (
+                <div className="space-y-0 divide-y divide-indigo-100">
+                  {myNotifications.map((n) => {
+                    const recipientNames = (n.recipientChildIds ?? [])
+                      .map((id) => childrenList.find((c) => c.id === id)?.name)
+                      .filter(Boolean).join(' & ');
+                    const declinerName = childrenList.find((c) => c.id === n.declinedByChildId)?.name ?? 'Another family';
+                    return (
+                      <div key={n.id} className="flex items-start gap-3 px-4 py-3">
+                        <span className="text-base mt-0.5">🔔</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-indigo-900 leading-snug">
+                            A photo of {recipientNames} was removed
+                          </p>
+                          <p className="text-xs font-semibold text-indigo-400 mt-0.5 leading-snug">
+                            {declinerName}'s family declined the photo — it has been removed from all timelines. If you have a concern, contact your educator.
+                          </p>
+                          <p className="text-[10px] text-indigo-300 mt-1">
+                            {new Date(n.ts).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         {/* Child switcher + add child */}
