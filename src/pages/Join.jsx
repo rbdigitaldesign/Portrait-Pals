@@ -1,4 +1,5 @@
 import { useSearchParams, Link } from 'react-router-dom';
+import { Camera, Lock, ShieldOff, Sparkles, Trash2, Users } from 'lucide-react';
 import { CHILDREN } from '../data/seed';
 
 export default function Join() {
@@ -14,8 +15,8 @@ export default function Join() {
       <div className="w-full max-w-sm bg-white rounded-3xl p-7 shadow-xl shadow-indigo-100">
 
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-teal-100 rounded-3xl flex items-center justify-center mx-auto mb-4 text-3xl">
-            📸
+          <div className="w-16 h-16 bg-teal-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
+            <Camera size={28} className="text-teal-600" />
           </div>
           <h1 className="font-black text-2xl text-indigo-900 leading-tight">
             {child
@@ -33,24 +34,29 @@ export default function Join() {
         </div>
 
         <div className="space-y-3">
-          <div className="bg-teal-50 rounded-2xl px-4 py-3">
-            <p className="text-xs font-extrabold text-teal-600 uppercase tracking-widest text-center">
-              🔒 Private by default
-            </p>
-            <p className="text-xs font-semibold text-teal-500 mt-0.5 text-center">
-              Only linked family members can see your child's photos
-            </p>
+          <div className="bg-teal-50 rounded-2xl px-4 py-3 flex items-center gap-3">
+            <div className="w-8 h-8 bg-teal-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Lock size={15} className="text-teal-600" />
+            </div>
+            <div>
+              <p className="text-xs font-extrabold text-teal-600 uppercase tracking-widest">Private by default</p>
+              <p className="text-xs font-semibold text-teal-500 mt-0.5">
+                Only linked family members can see your child's photos
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             {[
-              { emoji: '🚫', text: 'Never on social media' },
-              { emoji: '🤖', text: 'No AI training'       },
-              { emoji: '🗑️', text: 'Delete anytime'       },
-              { emoji: '👨‍👩‍👧', text: 'Family controlled'    },
-            ].map(({ emoji, text }) => (
-              <div key={text} className="bg-amber-50 rounded-xl px-3 py-2 flex items-center gap-2">
-                <span className="text-base">{emoji}</span>
+              { icon: ShieldOff, text: 'Never on social media', bg: 'bg-rose-50',   iconBg: 'bg-rose-100',   iconColor: 'text-rose-500'   },
+              { icon: Sparkles,  text: 'No AI training',        bg: 'bg-violet-50', iconBg: 'bg-violet-100', iconColor: 'text-violet-600' },
+              { icon: Trash2,    text: 'Delete anytime',        bg: 'bg-amber-50',  iconBg: 'bg-amber-100',  iconColor: 'text-amber-600'  },
+              { icon: Users,     text: 'Family controlled',     bg: 'bg-indigo-50', iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600' },
+            ].map(({ icon: Icon, text, bg, iconBg, iconColor }) => (
+              <div key={text} className={`${bg} rounded-xl px-3 py-2.5 flex items-center gap-2.5`}>
+                <div className={`w-7 h-7 ${iconBg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                  <Icon size={13} className={iconColor} />
+                </div>
                 <span className="text-xs font-bold text-indigo-700 leading-tight">{text}</span>
               </div>
             ))}

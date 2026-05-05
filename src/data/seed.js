@@ -15,11 +15,11 @@ export const ROOM_THRESHOLDS = [
 ];
 
 export const EVENT_TAGS = [
-  { id: 'birthday',  label: '🎂 Birthday'     },
-  { id: 'excursion', label: '🦁 Day Out'       },
-  { id: 'milestone', label: '⭐ Milestone'      },
-  { id: 'special',   label: '🎉 Special Event' },
-  { id: 'family',    label: '🏡 Family Moment' },
+  { id: 'birthday',  label: 'Birthday',      icon: 'Cake'      },
+  { id: 'excursion', label: 'Day Out',        icon: 'MapPin'    },
+  { id: 'milestone', label: 'Milestone',      icon: 'Star'      },
+  { id: 'special',   label: 'Special Event',  icon: 'PartyPopper' },
+  { id: 'family',    label: 'Family Moment',  icon: 'Home'      },
 ];
 
 // consentStatus:

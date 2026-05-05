@@ -10,15 +10,17 @@ import {
   Pause,
   Download,
   X,
+  Zap,
+  Film,
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 
 const SPEEDS = [
-  { label: '0.5×', ms: 8000 },
-  { label: '1×',   ms: 4000 },
-  { label: '2×',   ms: 2000 },
-  { label: '⚡',   ms: 800  },
-  { label: '🎞',   ms: 200, timelapse: true },
+  { label: '0.5×',                                   ms: 8000              },
+  { label: '1×',                                     ms: 4000              },
+  { label: '2×',                                     ms: 2000              },
+  { label: <Zap  size={12} className="inline" />,    ms: 800               },
+  { label: <Film size={12} className="inline" />,    ms: 200, timelapse: true },
 ];
 
 const DEFAULT_SPEED_MS = 4000;

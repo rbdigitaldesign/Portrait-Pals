@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2, Shield, Bell } from 'lucide-react';
+import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2, Shield, Bell, Clock, Check, ArrowRight, GraduationCap, Cake, MapPin, Star, PartyPopper, Home } from 'lucide-react';
+
+const EVENT_TAG_ICONS = { Cake, MapPin, Star, PartyPopper, Home };
+function EventTagIcon({ tag, size = 10, className = '' }) {
+  const Icon = EVENT_TAG_ICONS[tag?.icon];
+  return Icon ? <Icon size={size} className={className} /> : null;
+}
 import { useAuth } from '../contexts/AuthContext';
 import { useApp, calcRoomForAge } from '../contexts/AppContext';
 import { EVENT_TAGS } from '../data/seed';
@@ -299,7 +305,7 @@ function EditChildModal({ child, rooms, onClose, onSave, userRole }) {
                 <img src={child.photoUrl} alt={name} className="w-full h-full object-cover" />
               </div>
               <div className="mt-3 bg-amber-50 rounded-2xl px-4 py-2.5 text-center max-w-[240px]">
-                <p className="text-xs font-bold text-amber-600">📸 Photo set by parent</p>
+                <p className="text-xs font-bold text-amber-600 flex items-center justify-center gap-1"><Camera size={12} /> Photo set by parent</p>
                 <p className="text-[11px] text-indigo-400 font-semibold mt-0.5">
                   The family has chosen this profile picture.
                 </p>
@@ -499,12 +505,13 @@ function EventTagFilter({ selected, onSelect }) {
         <button
           key={tag.id}
           onClick={() => onSelect(selected === tag.id ? null : tag.id)}
-          className={`flex-shrink-0 px-3 py-1.5 rounded-2xl font-bold text-xs transition-all active:scale-95 ${
+          className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-2xl font-bold text-xs transition-all active:scale-95 ${
             selected === tag.id
               ? 'bg-rose-500 text-white shadow-md'
               : 'bg-white text-indigo-600 shadow-sm'
           }`}
         >
+          <EventTagIcon tag={tag} size={11} />
           {tag.label}
         </button>
       ))}
@@ -574,8 +581,8 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5 flex-wrap justify-end">
               {eventTag && (
-                <span className="bg-rose-50 text-rose-600 font-extrabold text-[10px] px-2.5 py-1 rounded-full">
-                  {eventTag.label}
+                <span className="bg-rose-50 text-rose-600 font-extrabold text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <EventTagIcon tag={eventTag} size={9} /> {eventTag.label}
                 </span>
               )}
               <span className={`font-extrabold text-[10px] px-2.5 py-1 rounded-full ${portrait.source === 'parent' ? 'bg-teal-100 text-teal-600' : 'bg-amber-100 text-amber-600'}`}>
@@ -653,8 +660,8 @@ function PendingApprovalCard({ portrait, childId, childrenList, onApprove, onDec
       <div className="aspect-[4/3] bg-indigo-100 relative">
         <img src={portrait.photoUrl} alt={names} className="w-full h-full object-cover" loading="lazy" />
         <div className="absolute inset-0 bg-amber-500/10 flex items-end p-3">
-          <span className="bg-amber-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow">
-            ⏳ Awaiting your approval
+          <span className="bg-amber-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow flex items-center gap-1.5">
+            <Clock size={11} /> Awaiting your approval
           </span>
         </div>
       </div>
@@ -675,7 +682,7 @@ function PendingApprovalCard({ portrait, childId, childrenList, onApprove, onDec
             onClick={() => onApprove(portrait.id, childId)}
             className="flex-1 bg-teal-500 text-white font-black text-sm rounded-2xl py-2.5 shadow-md shadow-teal-200 active:scale-95 transition-transform"
           >
-            ✓ Approve
+            <Check size={14} className="inline mr-1" />Approve
           </button>
         </div>
       </div>
@@ -840,19 +847,38 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
                       .map((id) => childrenList.find((c) => c.id === id)?.name)
                       .filter(Boolean).join(' & ');
                     const declinerName = childrenList.find((c) => c.id === n.declinedByChildId)?.name ?? 'Another family';
+                    const portrait = portraits.find((p) => p.id === n.portraitId);
+                    const photoLabel = portrait?.notes
+                      ? `"${portrait.notes}"`
+                      : portrait
+                        ? `Photo from ${new Date(portrait.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                        : 'A shared photo';
                     return (
                       <div key={n.id} className="flex items-start gap-3 px-4 py-3">
-                        <span className="text-base mt-0.5">🔔</span>
+                        <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center">
+                          <Bell size={14} className="text-rose-500" />
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-indigo-900 leading-snug">
-                            A photo of {recipientNames} was removed
-                          </p>
-                          <p className="text-xs font-semibold text-indigo-400 mt-0.5 leading-snug">
-                            {declinerName}'s family declined the photo — it has been removed from all timelines. If you have a concern, contact your educator.
-                          </p>
-                          <p className="text-[10px] text-indigo-300 mt-1">
-                            {new Date(n.ts).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}
-                          </p>
+                          <div className="flex items-start gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-indigo-900 leading-snug">
+                                {photoLabel} was removed
+                              </p>
+                              <p className="text-xs font-semibold text-indigo-400 mt-0.5 leading-snug">
+                                {declinerName}'s family declined this photo — removed from {recipientNames}'s timeline. Contact your educator if you'd like to discuss.
+                              </p>
+                              <p className="text-[10px] text-indigo-300 mt-1">
+                                {new Date(n.ts).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}
+                              </p>
+                            </div>
+                            {portrait?.photoUrl && (
+                              <img
+                                src={portrait.photoUrl}
+                                alt=""
+                                className="w-12 h-12 rounded-xl object-cover flex-shrink-0 bg-indigo-100"
+                              />
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -1106,7 +1132,7 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
           {/* Pending consent badge */}
           {hasPending && (
             <div className="absolute top-2 right-2 bg-amber-500 rounded-full px-2 py-0.5">
-              <span className="text-white text-[8px] font-bold leading-none">⏳ Awaiting consent</span>
+              <span className="text-white text-[8px] font-bold leading-none flex items-center gap-0.5"><Clock size={8} /> Awaiting consent</span>
             </div>
           )}
           {/* Delete ring */}
@@ -1226,7 +1252,8 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
       {roomToast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
           <div className="bg-indigo-900 text-white rounded-2xl px-5 py-3 shadow-2xl text-sm font-bold flex items-center gap-2">
-            🎈 {roomToast} {roomToast === 1 ? 'child has' : 'children have'} been moved to a new room based on their birthdate
+            <ArrowRight size={15} className="flex-shrink-0" />
+            {roomToast} {roomToast === 1 ? 'child has' : 'children have'} been moved to a new room based on their birthdate
           </div>
         </div>
       )}

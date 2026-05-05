@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Navigate, Link } from 'react-router-dom';
-import { ChevronDown, Lock, ShieldCheck, Sparkles, Trash2 } from 'lucide-react';
+import { ChevronDown, Lock, ShieldCheck, Sparkles, Trash2, GraduationCap, ShieldAlert, Home, Loader2, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const DEMO_ACCOUNTS = [
@@ -371,9 +371,11 @@ export default function Login() {
                 account.role === 'admin'    ? 'bg-violet-50 text-violet-600' :
                                              'bg-teal-50 text-teal-600'
               }`}>
-                {account.role === 'educator' ? '🏫 Educator — global access' :
-                 account.role === 'admin'    ? '🔐 Administrator — audit access' :
-                                              "🏡 Parent — your family's memories"}
+                <span className="flex items-center justify-center gap-1.5">
+                  {account.role === 'educator' ? <><GraduationCap size={13} /> Educator — global access</> :
+                   account.role === 'admin'    ? <><ShieldAlert size={13} /> Administrator — audit access</> :
+                                                <><Home size={13} /> Parent — your family's memories</>}
+                </span>
               </div>
             )}
 
@@ -388,7 +390,9 @@ export default function Login() {
                 boxShadow: loading || !account ? 'none' : '0 6px 24px rgba(244,63,94,0.38)',
               }}
             >
-              {loading ? '✨ Entering…' : "Let's go! 🎉"}
+              {loading
+                ? <span className="flex items-center justify-center gap-2"><Loader2 size={18} className="animate-spin" /> Entering…</span>
+                : <span className="flex items-center justify-center gap-2">Let's go! <ArrowRight size={18} /></span>}
             </button>
           </form>
         </div>
