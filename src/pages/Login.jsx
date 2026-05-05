@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Navigate, Link } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Lock, ShieldCheck, Sparkles, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const DEMO_ACCOUNTS = [
@@ -371,13 +371,39 @@ export default function Login() {
           </p>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { emoji: '🔒', label: 'Private by default',  sub: 'Only linked accounts can see your child\'s photos' },
-              { emoji: '🚫', label: 'Never sold',          sub: 'Your data is never sold or shared with third parties' },
-              { emoji: '🤖', label: 'No AI training',      sub: 'Photos are never used to train AI models' },
-              { emoji: '🗑️', label: 'Delete anytime',      sub: 'Request full removal of your data at any time' },
-            ].map(({ emoji, label, sub }) => (
-              <div key={label} className="bg-amber-50 rounded-2xl p-3 flex gap-2.5 items-start">
-                <span className="text-lg flex-shrink-0 mt-0.5">{emoji}</span>
+              {
+                icon: <Lock size={16} strokeWidth={2.5} />,
+                iconBg: 'bg-teal-100', iconColor: 'text-teal-600',
+                cardBg: 'bg-teal-50',
+                label: 'Private by default',
+                sub: "Only linked accounts can see your child's photos",
+              },
+              {
+                icon: <ShieldCheck size={16} strokeWidth={2.5} />,
+                iconBg: 'bg-rose-100', iconColor: 'text-rose-500',
+                cardBg: 'bg-rose-50',
+                label: 'Never sold',
+                sub: 'Your data is never sold or shared with third parties',
+              },
+              {
+                icon: <Sparkles size={16} strokeWidth={2.5} />,
+                iconBg: 'bg-violet-100', iconColor: 'text-violet-600',
+                cardBg: 'bg-violet-50',
+                label: 'No AI training',
+                sub: 'Photos are never used to train AI models',
+              },
+              {
+                icon: <Trash2 size={16} strokeWidth={2.5} />,
+                iconBg: 'bg-amber-100', iconColor: 'text-amber-600',
+                cardBg: 'bg-amber-50',
+                label: 'Delete anytime',
+                sub: 'Request full removal of your data at any time',
+              },
+            ].map(({ icon, iconBg, iconColor, cardBg, label, sub }) => (
+              <div key={label} className={`${cardBg} rounded-2xl p-3 flex gap-2.5 items-start`}>
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg} ${iconColor}`}>
+                  {icon}
+                </div>
                 <div>
                   <p className="font-black text-indigo-900 text-xs leading-tight">{label}</p>
                   <p className="text-indigo-400 text-[10px] font-semibold mt-0.5 leading-snug">{sub}</p>
