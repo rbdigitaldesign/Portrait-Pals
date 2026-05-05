@@ -7,9 +7,15 @@ function EventTagIcon({ tag, size = 10, className = '' }) {
   const Icon = EVENT_TAG_ICONS[tag?.icon];
   return Icon ? <Icon size={size} className={className} /> : null;
 }
+
+function sourceLabel(portrait, childrenList) {
+  if (portrait.source === 'parent') return 'Family Snap';
+  const firstChild = portrait.taggedIds.map((id) => childrenList.find((c) => c.id === id)).filter(Boolean)[0];
+  return ROOMS.find((r) => r.id === firstChild?.roomId)?.label ?? 'School';
+}
 import { useAuth } from '../contexts/AuthContext';
 import { useApp, calcRoomForAge } from '../contexts/AppContext';
-import { EVENT_TAGS } from '../data/seed';
+import { EVENT_TAGS, ROOMS } from '../data/seed';
 
 /* ─── helpers ─────────────────────────────────────────────────────────── */
 
@@ -586,7 +592,7 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
                 </span>
               )}
               <span className={`font-extrabold text-[10px] px-2.5 py-1 rounded-full ${portrait.source === 'parent' ? 'bg-teal-100 text-teal-600' : 'bg-amber-100 text-amber-600'}`}>
-                {portrait.source === 'parent' ? 'Family' : 'School'}
+                {sourceLabel(portrait, childrenList)}
               </span>
               <span className="bg-indigo-600 text-white font-extrabold text-[10px] px-2.5 py-1 rounded-full">
                 {dateStr}
@@ -1159,11 +1165,16 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
         <div className="p-3.5">
           <p className="font-black text-indigo-900 text-sm leading-tight">{names}</p>
           <p className="text-indigo-400 text-xs font-semibold mt-0.5">{dateStr}</p>
-          {eventTag && (
-            <span className="inline-block mt-1.5 bg-rose-50 text-rose-600 font-bold text-[10px] px-2 py-0.5 rounded-full">
-              {eventTag.label}
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            <span className="bg-amber-100 text-amber-700 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+              {sourceLabel(portrait, childrenList)}
             </span>
-          )}
+            {eventTag && (
+              <span className="bg-rose-50 text-rose-600 font-bold text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
+                <EventTagIcon tag={eventTag} size={9} /> {eventTag.label}
+              </span>
+            )}
+          </div>
           {portrait.notes ? (
             <p className="text-indigo-600 text-xs mt-1.5 leading-snug line-clamp-2">{portrait.notes}</p>
           ) : null}
