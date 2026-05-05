@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Trash2 } from 'lucide-react';
+import { LogOut, Download, Mail, Clock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const AUDIT_KEY = 'pp_audit_log';
@@ -16,8 +16,17 @@ const ACTION_STYLES = {
   CONSENT_DECLINED: 'bg-orange-50  text-orange-700',
 };
 
+const CONSENT_STATUS_STYLE = {
+  pending:  { pill: 'bg-amber-100 text-amber-700', label: 'Pending photo approval' },
+  unlinked: { pill: 'bg-indigo-100 text-indigo-600', label: 'Family not linked'   },
+};
+
 function formatTs(iso) {
   return new Date(iso).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function formatDateShort(iso) {
+  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function readLocalJson(key, fallback) {
@@ -25,13 +34,154 @@ function readLocalJson(key, fallback) {
   catch { return fallback; }
 }
 
+function downloadCSV(rawLog) {
+  const headers = ['Timestamp', 'User Email', 'Role', 'Action', 'Detail'];
+  const rows = rawLog.map((e) => [
+    e.ts,
+    e.userEmail ?? '',
+    e.role      ?? '',
+    e.action    ?? '',
+    e.detail    ?? '',
+  ]);
+  const escape = (val) => `"${String(val).replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map((row) => row.map(escape).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `portrait-pals-audit-${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ─── Pending Consent Panel ───────────────────────────────────────────── */
+
+function PendingConsentPanel({ children, portraits }) {
+  // Children whose overall consent hasn't been given yet
+  const pendingChildren = children.filter(
+    (c) => c.consentStatus === 'pending' || c.consentStatus === 'unlinked'
+  );
+
+  // Portraits that are in a per-photo consent queue (tagged child hasn't approved yet)
+  const pendingPortraitRows = portraits
+    .filter((p) => (p.pendingConsent?.length ?? 0) > 0)
+    .flatMap((p) =>
+      p.pendingConsent.map((childId) => {
+        const child = children.find((c) => c.id === childId);
+        return child ? { portrait: p, child } : null;
+      }).filter(Boolean)
+    );
+
+  const totalPending = pendingChildren.length + pendingPortraitRows.length;
+
+  return (
+    <div className="bg-white rounded-3xl shadow-md shadow-indigo-100 overflow-hidden">
+      <div className="px-5 pt-5 pb-4 border-b border-amber-100 flex items-center justify-between">
+        <div>
+          <h2 className="font-black text-indigo-900 text-base">Consent Status</h2>
+          <p className="text-xs font-semibold text-indigo-400 mt-0.5">
+            Families who haven't yet approved photo sharing
+          </p>
+        </div>
+        {totalPending > 0 && (
+          <span className="bg-amber-500 text-white font-black text-sm w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0">
+            {totalPending}
+          </span>
+        )}
+      </div>
+
+      {/* Overall consent — children whose family hasn't signed up yet */}
+      <div className="px-5 pt-4 pb-2">
+        <p className="text-[10px] font-extrabold text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <Clock size={10} /> Awaiting family account / consent
+        </p>
+        {pendingChildren.length === 0 ? (
+          <p className="text-sm font-semibold text-indigo-300 pb-3">All families have provided consent ✓</p>
+        ) : (
+          <div className="space-y-2 mb-2">
+            {pendingChildren.map((child) => {
+              const style = CONSENT_STATUS_STYLE[child.consentStatus] ?? CONSENT_STATUS_STYLE.pending;
+              return (
+                <div key={child.id} className="flex items-center gap-3 bg-amber-50 rounded-2xl px-4 py-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0 font-black text-indigo-400 text-sm">
+                    {child.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-indigo-900 text-sm">{child.name}</p>
+                    <p className="text-xs font-semibold text-indigo-400 truncate">{child.roomId ?? 'No room assigned'}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full ${style.pill}`}>
+                      {style.label}
+                    </span>
+                    {child.parentEmail ? (
+                      <span className="flex items-center gap-1 text-[10px] font-semibold text-indigo-400">
+                        <Mail size={9} />{child.parentEmail}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-rose-400">No parent email on file</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Per-photo consent queue */}
+      <div className="px-5 pt-2 pb-5">
+        <p className="text-[10px] font-extrabold text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <Clock size={10} /> Photos awaiting family approval
+        </p>
+        {pendingPortraitRows.length === 0 ? (
+          <p className="text-sm font-semibold text-indigo-300">No photos waiting for approval ✓</p>
+        ) : (
+          <div className="space-y-2">
+            {pendingPortraitRows.map(({ portrait, child }, i) => (
+              <div key={i} className="flex items-center gap-3 bg-rose-50 rounded-2xl px-4 py-3">
+                {portrait.photoUrl && (
+                  <img
+                    src={portrait.photoUrl}
+                    alt=""
+                    className="w-10 h-10 rounded-xl object-cover flex-shrink-0 bg-indigo-100"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-black text-indigo-900 text-sm">
+                    {child.name}
+                    <span className="font-semibold text-indigo-400 text-xs ml-1.5">tagged in photo</span>
+                  </p>
+                  <p className="text-xs font-semibold text-indigo-400">{formatDateShort(portrait.date)}{portrait.notes ? ` · ${portrait.notes}` : ''}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <span className="bg-rose-100 text-rose-700 text-[10px] font-extrabold px-2.5 py-1 rounded-full">
+                    Awaiting approval
+                  </span>
+                  {child.parentEmail && (
+                    <span className="flex items-center gap-1 text-[10px] font-semibold text-indigo-400">
+                      <Mail size={9} />{child.parentEmail}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Admin page ──────────────────────────────────────────────────────── */
+
 export default function Admin() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [filterAction, setFilterAction] = useState('');
   const [filterUser,   setFilterUser]   = useState('');
-  const [confirmClear, setConfirmClear] = useState(false);
-  const [tick, setTick] = useState(0);
 
   if (!user || user.role !== 'admin') {
     return (
@@ -49,13 +199,15 @@ export default function Admin() {
     );
   }
 
-  const rawLog  = readLocalJson(AUDIT_KEY, []);
+  const rawLog    = readLocalJson(AUDIT_KEY, []);
   const portraits = readLocalJson('pp_portraits', []);
   const children  = readLocalJson('pp_children', []);
 
-  const todayStr      = new Date().toDateString();
-  const loginsToday   = rawLog.filter((e) => e.action === 'LOGIN' && new Date(e.ts).toDateString() === todayStr).length;
-  const pendingConsents = portraits.reduce((acc, p) => acc + (p.pendingConsent?.length ?? 0), 0);
+  const todayStr    = new Date().toDateString();
+  const loginsToday = rawLog.filter((e) => e.action === 'LOGIN' && new Date(e.ts).toDateString() === todayStr).length;
+  const pendingConsentCount =
+    children.filter((c) => c.consentStatus === 'pending' || c.consentStatus === 'unlinked').length +
+    portraits.reduce((acc, p) => acc + (p.pendingConsent?.length ?? 0), 0);
 
   const allActions = [...new Set(rawLog.map((e) => e.action))].sort();
   const allUsers   = [...new Set(rawLog.map((e) => e.userEmail))].sort();
@@ -65,12 +217,6 @@ export default function Admin() {
     if (filterUser   && e.userEmail !== filterUser) return false;
     return true;
   });
-
-  function clearLog() {
-    localStorage.removeItem(AUDIT_KEY);
-    setConfirmClear(false);
-    setTick((n) => n + 1);
-  }
 
   function handleLogout() {
     logout();
@@ -102,10 +248,10 @@ export default function Admin() {
         {/* Stats cards */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: 'Total Portraits',  value: portraits.length,  color: 'text-teal-600'   },
-            { label: 'Active Children',  value: children.length,   color: 'text-indigo-600' },
-            { label: 'Logins Today',     value: loginsToday,       color: 'text-rose-600'   },
-            { label: 'Pending Consents', value: pendingConsents,   color: 'text-amber-600'  },
+            { label: 'Total Portraits',   value: portraits.length,      color: 'text-teal-600'   },
+            { label: 'Active Children',   value: children.length,       color: 'text-indigo-600' },
+            { label: 'Logins Today',      value: loginsToday,           color: 'text-rose-600'   },
+            { label: 'Pending Consents',  value: pendingConsentCount,   color: 'text-amber-600'  },
           ].map(({ label, value, color }) => (
             <div key={label} className="bg-white rounded-3xl p-5 shadow-md shadow-indigo-100 text-center">
               <p className={`font-black text-3xl ${color}`}>{value}</p>
@@ -114,10 +260,13 @@ export default function Admin() {
           ))}
         </div>
 
-        {/* Filters */}
+        {/* Pending consent detail */}
+        <PendingConsentPanel children={children} portraits={portraits} />
+
+        {/* Filters + CSV download */}
         <div className="bg-white rounded-3xl p-5 shadow-md shadow-indigo-100">
           <div className="flex flex-wrap gap-3 items-center justify-between">
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
               <select
                 value={filterAction}
                 onChange={(e) => setFilterAction(e.target.value)}
@@ -144,10 +293,11 @@ export default function Admin() {
               )}
             </div>
             <button
-              onClick={() => setConfirmClear(true)}
-              className="flex items-center gap-1.5 bg-rose-50 text-rose-500 font-bold text-sm rounded-2xl px-4 py-2 active:scale-95 transition-transform"
+              onClick={() => downloadCSV(rawLog)}
+              disabled={rawLog.length === 0}
+              className="flex items-center gap-1.5 bg-violet-50 text-violet-600 font-bold text-sm rounded-2xl px-4 py-2 active:scale-95 transition-transform disabled:opacity-40"
             >
-              <Trash2 size={14} /> Clear log
+              <Download size={14} /> Export CSV
             </button>
           </div>
         </div>
@@ -155,7 +305,7 @@ export default function Admin() {
         {/* Log entries */}
         {log.length === 0 ? (
           <div className="bg-white rounded-3xl p-10 text-center shadow-md shadow-indigo-100">
-            <p className="font-black text-indigo-400 text-lg">No log entries</p>
+            <p className="font-black text-indigo-400 text-lg">No log entries yet</p>
             <p className="text-indigo-300 text-sm mt-1">Actions will appear here as users interact with the app.</p>
           </div>
         ) : (
@@ -164,7 +314,7 @@ export default function Admin() {
               <div key={i} className="bg-white rounded-2xl px-4 py-3 shadow-sm shadow-indigo-100 flex items-start gap-3">
                 <div className="flex-shrink-0 mt-0.5">
                   <span className={`inline-block text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full ${ACTION_STYLES[entry.action] ?? 'bg-gray-100 text-gray-600'}`}>
-                    {entry.action.replace('_', ' ')}
+                    {entry.action.replace(/_/g, ' ')}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -184,32 +334,6 @@ export default function Admin() {
           </div>
         )}
       </div>
-
-      {/* Confirm clear */}
-      {confirmClear && (
-        <div className="fixed inset-0 bg-indigo-900/60 backdrop-blur-sm z-50 flex items-center justify-center px-6">
-          <div className="bg-white rounded-3xl w-full max-w-xs p-6 shadow-2xl text-center">
-            <h2 className="font-black text-indigo-900 text-lg mb-2">Clear audit log?</h2>
-            <p className="text-indigo-400 font-semibold text-sm mb-6">
-              All {rawLog.length} entries will be permanently deleted.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmClear(false)}
-                className="flex-1 bg-amber-50 text-indigo-600 font-black rounded-2xl py-3.5 active:scale-95 transition-transform"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={clearLog}
-                className="flex-1 bg-rose-500 text-white font-black rounded-2xl py-3.5 shadow-lg shadow-rose-200 active:scale-95 transition-transform"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
