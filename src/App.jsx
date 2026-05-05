@@ -8,6 +8,8 @@ import Capture   from './pages/Capture';
 import Slideshow from './pages/Slideshow';
 import Privacy   from './pages/Privacy';
 import Terms     from './pages/Terms';
+import Admin     from './pages/Admin';
+import Join      from './pages/Join';
 
 export default function App() {
   return (
@@ -17,6 +19,7 @@ export default function App() {
           <Route path="/login"   element={<Login />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms"   element={<Terms />} />
+          <Route path="/join"    element={<Join />} />
           <Route path="/dashboard" element={
             <ProtectedRoute><Dashboard /></ProtectedRoute>
           } />
@@ -25,6 +28,9 @@ export default function App() {
           } />
           <Route path="/slideshow" element={
             <ProtectedRoute><Slideshow /></ProtectedRoute>
+          } />
+          <Route path="/admin" element={
+            <ProtectedRoute><Admin /></ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

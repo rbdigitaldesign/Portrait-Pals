@@ -4,9 +4,11 @@ import { ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const DEMO_ACCOUNTS = [
-  { label: 'Educator — admin@school.com', email: 'admin@school.com',    password: 'pass123', role: 'educator' },
-  { label: "Parent — Maggie's Family",    email: 'maggie@parent.com',   password: 'pass123', role: 'parent'   },
-  { label: 'Parent — Sibling Account',    email: 'siblings@parent.com', password: 'pass123', role: 'parent'   },
+  { label: 'Educator — admin@school.com',    email: 'admin@school.com',       password: 'pass123',  role: 'educator' },
+  { label: "Parent — Maggie's Family",       email: 'maggie@parent.com',      password: 'pass123',  role: 'parent'   },
+  { label: 'Parent — Sibling Account',       email: 'siblings@parent.com',    password: 'pass123',  role: 'parent'   },
+  { label: 'Parent — Demo (Mia & Noah)',     email: 'demo@parent.com',        password: 'pass123',  role: 'parent'   },
+  { label: 'Admin — App Administrator',      email: 'admin@portraitpals.com', password: 'admin2024', role: 'admin'   },
 ];
 
 /* ── SVG illustration ───────────────────────────────────────────────────── */
@@ -231,7 +233,7 @@ export default function Login() {
   const [loading,       setLoading]     = useState(false);
   const [error,         setError]       = useState('');
 
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
 
   const account = selectedIdx !== '' ? DEMO_ACCOUNTS[Number(selectedIdx)] : null;
 
@@ -241,9 +243,9 @@ export default function Login() {
     setError('');
     setLoading(true);
     await new Promise((r) => setTimeout(r, 350));
-    const ok = login(account.email, account.password);
+    const result = login(account.email, account.password);
     setLoading(false);
-    if (ok) navigate('/dashboard', { replace: true });
+    if (result.ok) navigate(result.role === 'admin' ? '/admin' : '/dashboard', { replace: true });
     else setError('Login failed — check the demo data.');
   }
 
@@ -278,6 +280,9 @@ export default function Login() {
           <Sparkle className="w-3 h-3 text-yellow-400 inline-block" />
           Little friendships, captured forever
           <Sparkle className="w-3 h-3 text-yellow-400 inline-block" />
+        </p>
+        <p className="text-indigo-400 text-xs font-semibold mt-2.5 max-w-[260px] text-center leading-relaxed">
+          A private, family-controlled alternative to sharing children's photos on social media.
         </p>
       </div>
 
@@ -333,11 +338,13 @@ export default function Login() {
 
             {account && (
               <div className={`text-center text-xs font-extrabold uppercase tracking-widest py-2.5 rounded-2xl ${
-                account.role === 'educator'
-                  ? 'bg-rose-50 text-rose-500'
-                  : 'bg-teal-50 text-teal-600'
+                account.role === 'educator' ? 'bg-rose-50 text-rose-500' :
+                account.role === 'admin'    ? 'bg-violet-50 text-violet-600' :
+                                             'bg-teal-50 text-teal-600'
               }`}>
-                {account.role === 'educator' ? '🏫 Educator — global access' : "🏡 Parent — your family's memories"}
+                {account.role === 'educator' ? '🏫 Educator — global access' :
+                 account.role === 'admin'    ? '🔐 Administrator — audit access' :
+                                              "🏡 Parent — your family's memories"}
               </div>
             )}
 
