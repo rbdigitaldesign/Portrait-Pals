@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2 } from 'lucide-react';
+import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useApp } from '../contexts/AppContext';
+import { useApp, calcRoomForAge } from '../contexts/AppContext';
+import { EVENT_TAGS } from '../data/seed';
 
 /* ─── helpers ─────────────────────────────────────────────────────────── */
 
@@ -85,7 +86,7 @@ function useLongPress(onLongPress, delay = 1800) {
     if (pct < 1) rafRef.current = requestAnimationFrame(tick);
   }
 
-  function start(e) {
+  function start() {
     fired.current = false;
     setPressing(true);
     setProgress(0);
@@ -141,8 +142,15 @@ function funTitle(portrait) {
   return FUN_TITLES[seed % FUN_TITLES.length];
 }
 
+const CONSENT_DOT = {
+  approved: 'bg-teal-400',
+  pending:  'bg-amber-400',
+  declined: 'bg-rose-500',
+  unlinked: 'bg-indigo-300',
+};
+
 /* ═══════════════════════════════════════════════════════════════════════
-   PARENT TIMELINE
+   SHARED COMPONENTS
    ═══════════════════════════════════════════════════════════════════════ */
 
 function DeleteConfirm({ onConfirm, onCancel }) {
@@ -155,16 +163,10 @@ function DeleteConfirm({ onConfirm, onCancel }) {
         <h2 className="font-black text-indigo-900 text-lg mb-1">Delete memory?</h2>
         <p className="text-indigo-400 font-semibold text-sm mb-6">This can't be undone.</p>
         <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 bg-amber-50 text-indigo-600 font-black rounded-2xl py-3.5 active:scale-95 transition-transform"
-          >
+          <button onClick={onCancel} className="flex-1 bg-amber-50 text-indigo-600 font-black rounded-2xl py-3.5 active:scale-95 transition-transform">
             Cancel
           </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 bg-rose-500 text-white font-black rounded-2xl py-3.5 shadow-lg shadow-rose-200 active:scale-95 transition-transform"
-          >
+          <button onClick={onConfirm} className="flex-1 bg-rose-500 text-white font-black rounded-2xl py-3.5 shadow-lg shadow-rose-200 active:scale-95 transition-transform">
             Delete
           </button>
         </div>
@@ -172,6 +174,337 @@ function DeleteConfirm({ onConfirm, onCancel }) {
     </div>
   );
 }
+
+/* ─── ChildPill (parent timeline switcher) ────────────────────────────── */
+
+function ChildPill({ child, active, onClick, onLongPress }) {
+  const lp = useLongPress(onLongPress ?? (() => {}), 600);
+  return (
+    <button
+      {...lp}
+      onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
+      onContextMenu={(e) => e.preventDefault()}
+      className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 select-none ${
+        active ? 'bg-teal-500 text-white shadow-md' : 'bg-amber-50 text-indigo-600'
+      }`}
+    >
+      {child.name}
+      <Pencil size={10} className={active ? 'text-white/50' : 'text-indigo-300'} />
+    </button>
+  );
+}
+
+/* ─── ChildChip (educator grid chip) ─────────────────────────────────── */
+
+function ChildChip({ child, active, onClick, onLongPress }) {
+  const lp = useLongPress(onLongPress ?? (() => {}), 600);
+  const dot = CONSENT_DOT[child.consentStatus ?? 'approved'] ?? 'bg-indigo-300';
+  return (
+    <button
+      {...lp}
+      onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
+      onContextMenu={(e) => e.preventDefault()}
+      className="flex flex-col items-center gap-1.5 flex-shrink-0 select-none"
+    >
+      <div className="relative">
+        <div
+          className={`w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center text-white font-black text-base shadow-md transition-all ${
+            active
+              ? 'bg-rose-500 ring-4 ring-offset-2 ring-offset-amber-50 ring-rose-300'
+              : 'bg-indigo-200'
+          }`}
+        >
+          {child.photoUrl
+            ? <img src={child.photoUrl} alt={child.name} className="w-full h-full object-cover" />
+            : initials(child.name)}
+        </div>
+        {/* Pencil badge */}
+        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full shadow flex items-center justify-center">
+          <Pencil size={9} className="text-indigo-400" />
+        </div>
+        {/* Consent dot */}
+        <div className={`absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full border-2 border-white ${dot}`} />
+      </div>
+      <span className="text-xs font-bold text-indigo-700 w-16 text-center leading-tight">
+        {child.name}
+      </span>
+    </button>
+  );
+}
+
+/* ─── EditChildModal ────────────────────────────────────────────────────── */
+
+function EditChildModal({ child, rooms, onClose, onSave, userRole }) {
+  const [name,         setName]         = useState(child.name);
+  const [birthdate,    setBirthdate]    = useState(child.birthdate ?? '');
+  const [photoUrl,     setPhotoUrl]     = useState(child.photoUrl  ?? '');
+  const [preview,      setPreview]      = useState(child.photoUrl  ?? null);
+  const [uploading,    setUploading]    = useState(false);
+  const [autoApprove,  setAutoApprove]  = useState(child.autoApproveTagging ?? false);
+  const fileRef = useRef(null);
+
+  const photoLockedByParent = userRole === 'educator' && child.photoSource === 'parent' && !!child.photoUrl;
+
+  async function handlePhotoFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const compressed = await compressProfilePhoto(file);
+    setPhotoUrl(compressed);
+    setPreview(compressed);
+    setUploading(false);
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const updates = {
+      name:               trimmed,
+      birthdate:          birthdate || undefined,
+      photoUrl:           photoUrl  || undefined,
+      autoApproveTagging: autoApprove,
+    };
+    if (photoUrl && photoUrl !== child.photoUrl) {
+      updates.photoSource = userRole === 'parent' ? 'parent' : 'educator';
+    }
+    onSave(updates);
+  }
+
+  return (
+    <div className="fixed inset-0 bg-indigo-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center px-4 pb-6">
+      <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-black text-xl text-indigo-900">Edit Profile</h2>
+          <button onClick={onClose} className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center text-indigo-400">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Photo section */}
+        <div className="flex flex-col items-center mb-5">
+          {photoLockedByParent ? (
+            <>
+              <div className="w-20 h-20 rounded-full overflow-hidden bg-indigo-100 ring-4 ring-indigo-100">
+                <img src={child.photoUrl} alt={name} className="w-full h-full object-cover" />
+              </div>
+              <div className="mt-3 bg-amber-50 rounded-2xl px-4 py-2.5 text-center max-w-[240px]">
+                <p className="text-xs font-bold text-amber-600">📸 Photo set by parent</p>
+                <p className="text-[11px] text-indigo-400 font-semibold mt-0.5">
+                  The family has chosen this profile picture.
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="relative w-20 h-20 rounded-full overflow-hidden bg-indigo-100 ring-4 ring-indigo-100 active:scale-95 transition-transform"
+              >
+                {preview
+                  ? <img src={preview} alt={name} className="w-full h-full object-cover" />
+                  : <span className="font-black text-2xl text-indigo-300">{initials(name)}</span>}
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
+                  <Pencil size={18} className="text-white" />
+                </div>
+              </button>
+              <p className="text-xs text-indigo-400 font-semibold mt-2">
+                {uploading ? 'Uploading…' : 'Tap to change photo'}
+              </p>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoFile} />
+            </>
+          )}
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">Name</label>
+            <input
+              type="text" value={name} onChange={(e) => setName(e.target.value)} required
+              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
+              Date of birth <span className="normal-case font-semibold">(optional)</span>
+            </label>
+            <input
+              type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400"
+            />
+          </div>
+
+          {/* Auto-approve toggle — parent only */}
+          {userRole === 'parent' && (
+            <div className="flex items-center justify-between bg-amber-50 rounded-2xl px-4 py-3.5 gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-indigo-900 text-sm">Auto-approve shared photos</p>
+                <p className="text-xs text-indigo-400 font-semibold mt-0.5 leading-snug">
+                  Photos tagged by other families appear without manual approval
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAutoApprove((v) => !v)}
+                className={`relative flex-shrink-0 w-12 h-6 rounded-full transition-colors ${autoApprove ? 'bg-teal-500' : 'bg-indigo-200'}`}
+                aria-label="Toggle auto-approve"
+              >
+                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${autoApprove ? 'left-6' : 'left-0.5'}`} />
+              </button>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full bg-rose-500 text-white font-black text-base rounded-2xl py-4 shadow-lg shadow-rose-200 active:scale-95 transition-transform mt-2"
+          >
+            Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ─── AddChildModal ─────────────────────────────────────────────────────── */
+
+function AddChildModal({ rooms, onClose, onAdd, hideRoom = false, userRole = 'educator' }) {
+  const [name,      setName]      = useState('');
+  const [birthdate, setBirthdate] = useState('');
+  const [roomId,    setRoomId]    = useState(rooms[0]?.id ?? '');
+  const [photoUrl,  setPhotoUrl]  = useState('');
+  const [preview,   setPreview]   = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+
+  async function handlePhotoFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const compressed = await compressProfilePhoto(file);
+    setPhotoUrl(compressed);
+    setPreview(compressed);
+    setUploading(false);
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    onAdd({
+      id:          `c${Date.now()}`,
+      name:        trimmed,
+      birthdate:   birthdate  || undefined,
+      photoUrl:    photoUrl   || undefined,
+      photoSource: photoUrl   ? userRole : undefined,
+      roomId:      hideRoom   ? undefined : roomId,
+    });
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-indigo-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center px-4 pb-6">
+      <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-black text-xl text-indigo-900">Add Child</h2>
+          <button onClick={onClose} className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center text-indigo-400">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex flex-col items-center mb-5">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="relative w-20 h-20 rounded-full overflow-hidden bg-indigo-100 ring-4 ring-indigo-100 active:scale-95 transition-transform"
+          >
+            {preview
+              ? <img src={preview} alt="Profile" className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center"><Plus size={24} className="text-indigo-300" /></div>}
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
+              <Pencil size={18} className="text-white" />
+            </div>
+          </button>
+          <p className="text-xs text-indigo-400 font-semibold mt-2">
+            {uploading ? 'Uploading…' : 'Tap to add photo (optional)'}
+          </p>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoFile} />
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">First name</label>
+            <input
+              type="text" value={name} onChange={(e) => setName(e.target.value)}
+              placeholder="Child's first name" required
+              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400 placeholder:text-indigo-300"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
+              Date of birth <span className="normal-case font-semibold">(optional)</span>
+            </label>
+            <input
+              type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400"
+            />
+          </div>
+          {!hideRoom && (
+            <div>
+              <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">Room</label>
+              <select
+                value={roomId} onChange={(e) => setRoomId(e.target.value)}
+                className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400 appearance-none"
+              >
+                {rooms.map((r) => (<option key={r.id} value={r.id}>{r.name}</option>))}
+              </select>
+            </div>
+          )}
+          <button type="submit" className="w-full bg-rose-500 text-white font-black text-base rounded-2xl py-4 shadow-lg shadow-rose-200 active:scale-95 transition-transform mt-2">
+            Add Child
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Event tag filter strip ─────────────────────────────────────────────── */
+
+function EventTagFilter({ selected, onSelect }) {
+  return (
+    <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
+      <button
+        onClick={() => onSelect(null)}
+        className={`flex-shrink-0 px-3 py-1.5 rounded-2xl font-bold text-xs transition-all active:scale-95 ${
+          !selected ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-indigo-600 shadow-sm'
+        }`}
+      >
+        All
+      </button>
+      {EVENT_TAGS.map((tag) => (
+        <button
+          key={tag.id}
+          onClick={() => onSelect(selected === tag.id ? null : tag.id)}
+          className={`flex-shrink-0 px-3 py-1.5 rounded-2xl font-bold text-xs transition-all active:scale-95 ${
+            selected === tag.id
+              ? 'bg-rose-500 text-white shadow-md'
+              : 'bg-white text-indigo-600 shadow-sm'
+          }`}
+        >
+          {tag.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PARENT TIMELINE
+   ═══════════════════════════════════════════════════════════════════════ */
 
 function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelete, onAddBirthday }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -192,6 +525,7 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
     : funTitle(portrait);
   const showBirthdayNudge = hasFriends && !ageLong && !!activeChild;
   const dateStr = formatDateShort(portrait.date);
+  const eventTag = EVENT_TAGS.find((t) => t.id === portrait.eventTag);
 
   return (
     <>
@@ -202,7 +536,6 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
         />
       )}
       <div className="flex gap-3">
-        {/* Timeline indicator */}
         <div className="flex flex-col items-center w-12 flex-shrink-0">
           <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
             <Camera size={17} className="text-indigo-500" />
@@ -210,7 +543,6 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
           <div className="w-0.5 bg-indigo-100 flex-1 mt-1 mb-1" />
         </div>
 
-        {/* Card */}
         <div
           {...lp}
           onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
@@ -230,7 +562,12 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+            <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5 flex-wrap justify-end">
+              {eventTag && (
+                <span className="bg-rose-50 text-rose-600 font-extrabold text-[10px] px-2.5 py-1 rounded-full">
+                  {eventTag.label}
+                </span>
+              )}
               <span className={`font-extrabold text-[10px] px-2.5 py-1 rounded-full ${portrait.source === 'parent' ? 'bg-teal-100 text-teal-600' : 'bg-amber-100 text-amber-600'}`}>
                 {portrait.source === 'parent' ? 'Family' : 'School'}
               </span>
@@ -240,7 +577,7 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
             </div>
           </div>
 
-          {/* Photo with delete overlay */}
+          {/* Photo with delete overlay + privacy badge */}
           <div className="aspect-[4/3] overflow-hidden bg-indigo-100 relative">
             <img
               src={portrait.photoUrl}
@@ -248,7 +585,12 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
               className="w-full h-full object-cover"
               loading="lazy"
             />
-            {/* Progress ring + trash shown while holding */}
+            {/* Privacy badge */}
+            <div className="absolute top-2 left-2 bg-black/40 backdrop-blur-sm rounded-full px-2.5 py-1 flex items-center gap-1">
+              <Shield size={9} className="text-white/80 flex-shrink-0" />
+              <span className="text-white/80 text-[9px] font-bold leading-none">Portrait Pals</span>
+            </div>
+            {/* Delete progress ring */}
             {pressing && progress > 0.2 && (
               <div className="absolute inset-0 bg-rose-900/50 flex flex-col items-center justify-center gap-2">
                 <div className="relative w-16 h-16">
@@ -288,37 +630,93 @@ function TimelineEntry({ portrait, activeChildId, childrenList, onClick, onDelet
   );
 }
 
-function ParentTimeline({ user, portraits, childrenList, logout, addChild, addChildToSession, updateChild, deletePortrait }) {
+/* ─── Pending Approval card ───────────────────────────────────────────── */
+
+function PendingApprovalCard({ portrait, childId, childrenList, onApprove, onDecline }) {
+  const tagged = portrait.taggedIds
+    .map((id) => childrenList.find((c) => c.id === id))
+    .filter(Boolean);
+  const names = tagged.map((c) => c.name).join(' & ') || 'Friendship Portrait';
+
+  return (
+    <div className="bg-white rounded-3xl shadow-md shadow-amber-100 overflow-hidden border-2 border-amber-200">
+      <div className="aspect-[4/3] bg-indigo-100 relative">
+        <img src={portrait.photoUrl} alt={names} className="w-full h-full object-cover" loading="lazy" />
+        <div className="absolute inset-0 bg-amber-500/10 flex items-end p-3">
+          <span className="bg-amber-500 text-white font-black text-xs px-3 py-1.5 rounded-full shadow">
+            ⏳ Awaiting your approval
+          </span>
+        </div>
+      </div>
+      <div className="p-4">
+        <p className="font-black text-indigo-900 text-sm leading-tight">{names}</p>
+        <p className="text-indigo-400 text-xs font-semibold mt-0.5">{formatDate(portrait.date)}</p>
+        {portrait.notes && (
+          <p className="text-indigo-600 text-xs mt-2 leading-snug line-clamp-2">{portrait.notes}</p>
+        )}
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => onDecline(portrait.id, childId)}
+            className="flex-1 bg-amber-50 text-indigo-600 font-black text-sm rounded-2xl py-2.5 active:scale-95 transition-transform"
+          >
+            Decline
+          </button>
+          <button
+            onClick={() => onApprove(portrait.id, childId)}
+            className="flex-1 bg-teal-500 text-white font-black text-sm rounded-2xl py-2.5 shadow-md shadow-teal-200 active:scale-95 transition-transform"
+          >
+            ✓ Approve
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ParentTimeline({ user, portraits, childrenList, logout, addChild, addChildToSession, updateChild, deletePortrait, approvePortraitForChild, declinePortraitForChild }) {
   const navigate       = useNavigate();
   const { rooms }      = useApp();
   const parentChildren = childrenList.filter((c) => (user.childIds ?? []).includes(c.id));
-  const [activeId,         setActiveId]         = useState(parentChildren[0]?.id ?? null);
-  const [selectedFriendId, setSelectedFriendId] = useState(null);
-  const [showAddChild,     setShowAddChild]      = useState(false);
-  const [editingChild,     setEditingChild]      = useState(null);
+  const [activeId,          setActiveId]          = useState(parentChildren[0]?.id ?? null);
+  const [selectedFriendId,  setSelectedFriendId]  = useState(null);
+  const [selectedEventTag,  setSelectedEventTag]  = useState(null);
+  const [showAddChild,      setShowAddChild]      = useState(false);
+  const [editingChild,      setEditingChild]      = useState(null);
+  const [privacyDismissed,  setPrivacyDismissed]  = useState(
+    () => sessionStorage.getItem('pp_privacy_banner') === '1'
+  );
 
   const activeChild = childrenList.find((c) => c.id === activeId);
 
-  // School portraits tagging this child + this parent's own captures tagging this child
+  // Portraits visible to this child (excluding pending/declined for this child)
   const childPortraits = portraits
-    .filter((p) => p.taggedIds.includes(activeId) && (p.source === 'school' || p.source === 'parent'))
+    .filter((p) =>
+      p.taggedIds.includes(activeId) &&
+      (p.source === 'school' || p.source === 'parent') &&
+      !p.pendingConsent?.includes(activeId) &&
+      !p.declinedBy?.includes(activeId)
+    )
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // Unique friends who appear alongside the active child
+  // Portraits pending this child's approval
+  const pendingPortraits = portraits.filter(
+    (p) => p.taggedIds.includes(activeId) && p.pendingConsent?.includes(activeId)
+  );
+
   const friends = childrenList.filter((c) => {
     if (c.id === activeId) return false;
     return childPortraits.some((p) => p.taggedIds.includes(c.id));
   });
 
-  // Apply friend filter — newest-first for the feed cards
-  const displayPortraits = selectedFriendId
-    ? childPortraits.filter((p) => p.taggedIds.includes(selectedFriendId))
-    : childPortraits;
+  const displayPortraits = childPortraits.filter((p) => {
+    if (selectedFriendId && !p.taggedIds.includes(selectedFriendId)) return false;
+    if (selectedEventTag  && p.eventTag !== selectedEventTag) return false;
+    return true;
+  });
 
-  // Oldest-first for slideshow so the story plays chronologically
   const slideshowPortraits = [...displayPortraits].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  const avatarUrl = activeChild.photoUrl ?? childPortraits[0]?.photoUrl ?? null;
+  const avatarUrl = activeChild?.photoUrl ?? childPortraits[0]?.photoUrl ?? null;
 
   function playTimeline() {
     if (slideshowPortraits.length === 0) return;
@@ -327,6 +725,11 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
 
   function toggleFriend(id) {
     setSelectedFriendId((prev) => (prev === id ? null : id));
+  }
+
+  function dismissPrivacyBanner() {
+    sessionStorage.setItem('pp_privacy_banner', '1');
+    setPrivacyDismissed(true);
   }
 
   if (!activeChild) {
@@ -345,6 +748,19 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
 
       {/* ── Header ── */}
       <div className="bg-white shadow-md shadow-indigo-100 px-5 pt-safe pt-4 pb-5 sticky top-0 z-20 rounded-b-3xl">
+        {/* Privacy info strip */}
+        {!privacyDismissed && (
+          <div className="flex items-center gap-2 bg-teal-50 rounded-2xl px-3 py-2.5 mb-3">
+            <Shield size={14} className="text-teal-500 flex-shrink-0" />
+            <p className="text-xs font-semibold text-teal-700 flex-1 leading-snug">
+              Photos shared only within Portrait Pals — never on social media.
+            </p>
+            <button onClick={dismissPrivacyBanner} className="text-teal-400 flex-shrink-0 p-0.5">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-black text-indigo-900 leading-tight">{activeChild.name}</h1>
@@ -388,7 +804,6 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
 
         {/* ── Hero card ── */}
         <div className="bg-white rounded-3xl shadow-lg shadow-indigo-100 p-6 mb-6 text-center">
-          {/* Avatar */}
           <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-4 bg-indigo-100 ring-4 ring-indigo-100">
             {avatarUrl ? (
               <img src={avatarUrl} alt={activeChild.name} className="w-full h-full object-cover" />
@@ -398,12 +813,10 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
               </div>
             )}
           </div>
-
           <h2 className="font-black text-xl text-indigo-900">Friendship Timeline</h2>
           <p className="text-indigo-400 font-semibold text-sm mt-1.5">
             Capturing {activeChild.name}'s connections over time.
           </p>
-
           <button
             onClick={playTimeline}
             disabled={childPortraits.length === 0}
@@ -414,9 +827,35 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
           </button>
         </div>
 
+        {/* ── Pending approvals ── */}
+        {pendingPortraits.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <p className="text-xs font-extrabold text-amber-600 uppercase tracking-widest">
+                Pending Approval
+              </p>
+              <span className="bg-amber-500 text-white font-black text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
+                {pendingPortraits.length}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {pendingPortraits.map((p) => (
+                <PendingApprovalCard
+                  key={p.id}
+                  portrait={p}
+                  childId={activeId}
+                  childrenList={childrenList}
+                  onApprove={approvePortraitForChild}
+                  onDecline={declinePortraitForChild}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ── Friend filter strip ── */}
         {friends.length > 0 && (
-          <div className="mb-5">
+          <div className="mb-4">
             <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-3">
               Filter by friend
             </p>
@@ -448,13 +887,21 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
             {selectedFriendId && (
               <button
                 onClick={() => setSelectedFriendId(null)}
-                className="mt-3 text-xs font-bold text-teal-500 underline underline-offset-2"
+                className="mt-2 text-xs font-bold text-teal-500 underline underline-offset-2"
               >
                 Show all memories
               </button>
             )}
           </div>
         )}
+
+        {/* ── Event tag filter ── */}
+        <div className="mb-4">
+          <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
+            Filter by event
+          </p>
+          <EventTagFilter selected={selectedEventTag} onSelect={setSelectedEventTag} />
+        </div>
 
         {/* ── Timeline feed ── */}
         {displayPortraits.length === 0 ? (
@@ -463,7 +910,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
               <Camera size={28} className="text-teal-400" />
             </div>
             <p className="font-black text-indigo-900 text-lg">
-              {selectedFriendId ? `No moments with ${friends.find(f => f.id === selectedFriendId)?.name} yet` : 'No memories yet'}
+              {selectedFriendId || selectedEventTag ? 'No matching memories' : 'No memories yet'}
             </p>
             <p className="text-indigo-400 text-sm font-semibold mt-1 max-w-xs">
               Tap Add Memory below to capture {activeChild.name}'s first friendship moment.
@@ -538,38 +985,6 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
    EDUCATOR DASHBOARD
    ═══════════════════════════════════════════════════════════════════════ */
 
-function ChildChip({ child, active, onClick, onLongPress }) {
-  const lp = useLongPress(onLongPress ?? (() => {}), 600);
-  return (
-    <button
-      {...lp}
-      onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
-      onContextMenu={(e) => e.preventDefault()}
-      className="flex flex-col items-center gap-1.5 flex-shrink-0 select-none"
-    >
-      <div className="relative">
-        <div
-          className={`w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center text-white font-black text-base shadow-md transition-all ${
-            active
-              ? 'bg-rose-500 ring-4 ring-offset-2 ring-offset-amber-50 ring-rose-300'
-              : 'bg-indigo-200'
-          }`}
-        >
-          {child.photoUrl
-            ? <img src={child.photoUrl} alt={child.name} className="w-full h-full object-cover" />
-            : initials(child.name)}
-        </div>
-        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full shadow flex items-center justify-center">
-          <Pencil size={9} className="text-indigo-400" />
-        </div>
-      </div>
-      <span className="text-xs font-bold text-indigo-700 w-16 text-center leading-tight">
-        {child.name}
-      </span>
-    </button>
-  );
-}
-
 function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const lp = useLongPress(() => setConfirmDelete(true));
@@ -578,6 +993,8 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
   const tagged  = portrait.taggedIds.map((id) => childrenList.find((c) => c.id === id)).filter(Boolean);
   const names   = tagged.map((c) => c.name).join(' & ') || 'Unnamed';
   const dateStr = formatDate(portrait.date);
+  const eventTag = EVENT_TAGS.find((t) => t.id === portrait.eventTag);
+  const hasPending = (portrait.pendingConsent?.length ?? 0) > 0;
 
   return (
     <>
@@ -595,6 +1012,18 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
       >
         <div className="aspect-[4/3] bg-indigo-100 overflow-hidden relative">
           <img src={portrait.photoUrl} alt={names} className="w-full h-full object-cover" loading="lazy" />
+          {/* Privacy badge */}
+          <div className="absolute top-2 left-2 bg-black/40 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-0.5">
+            <Shield size={8} className="text-white/70 flex-shrink-0" />
+            <span className="text-white/70 text-[8px] font-bold leading-none">Portrait Pals</span>
+          </div>
+          {/* Pending consent badge */}
+          {hasPending && (
+            <div className="absolute top-2 right-2 bg-amber-500 rounded-full px-2 py-0.5">
+              <span className="text-white text-[8px] font-bold leading-none">⏳ Awaiting consent</span>
+            </div>
+          )}
+          {/* Delete ring */}
           {pressing && progress > 0.2 && (
             <div className="absolute inset-0 bg-rose-900/50 flex flex-col items-center justify-center gap-1.5">
               <div className="relative w-12 h-12">
@@ -618,6 +1047,11 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
         <div className="p-3.5">
           <p className="font-black text-indigo-900 text-sm leading-tight">{names}</p>
           <p className="text-indigo-400 text-xs font-semibold mt-0.5">{dateStr}</p>
+          {eventTag && (
+            <span className="inline-block mt-1.5 bg-rose-50 text-rose-600 font-bold text-[10px] px-2 py-0.5 rounded-full">
+              {eventTag.label}
+            </span>
+          )}
           {portrait.notes ? (
             <p className="text-indigo-600 text-xs mt-1.5 leading-snug line-clamp-2">{portrait.notes}</p>
           ) : null}
@@ -631,268 +1065,52 @@ function PortraitCard({ portrait, childrenList, onClick, onDelete }) {
   );
 }
 
-/* ─── ChildPill (parent timeline switcher with long-press) ─────────────── */
-
-function ChildPill({ child, active, onClick, onLongPress }) {
-  const lp = useLongPress(onLongPress ?? (() => {}), 600);
-  return (
-    <button
-      {...lp}
-      onClick={(e) => { lp.onClick(e); if (!e.defaultPrevented) onClick?.(); }}
-      onContextMenu={(e) => e.preventDefault()}
-      className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 select-none ${
-        active ? 'bg-teal-500 text-white shadow-md' : 'bg-amber-50 text-indigo-600'
-      }`}
-    >
-      {child.name}
-      <Pencil size={10} className={active ? 'text-white/50' : 'text-indigo-300'} />
-    </button>
-  );
-}
-
-/* ─── EditChildModal ────────────────────────────────────────────────────── */
-
-function EditChildModal({ child, rooms, onClose, onSave, userRole }) {
-  const [name,      setName]      = useState(child.name);
-  const [birthdate, setBirthdate] = useState(child.birthdate ?? '');
-  const [photoUrl,  setPhotoUrl]  = useState(child.photoUrl  ?? '');
-  const [preview,   setPreview]   = useState(child.photoUrl  ?? null);
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef(null);
-
-  // Educator cannot override a photo that a parent has chosen
-  const photoLockedByParent = userRole === 'educator' && child.photoSource === 'parent' && !!child.photoUrl;
-
-  async function handlePhotoFile(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    const compressed = await compressProfilePhoto(file);
-    setPhotoUrl(compressed);
-    setPreview(compressed);
-    setUploading(false);
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const updates = {
-      name:      trimmed,
-      birthdate: birthdate || undefined,
-      photoUrl:  photoUrl  || undefined,
-    };
-    // Only stamp photoSource if the photo actually changed
-    if (photoUrl && photoUrl !== child.photoUrl) {
-      updates.photoSource = userRole === 'parent' ? 'parent' : 'educator';
-    }
-    onSave(updates);
-  }
-
-  return (
-    <div className="fixed inset-0 bg-indigo-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center px-4 pb-6">
-      <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-black text-xl text-indigo-900">Edit Profile</h2>
-          <button onClick={onClose} className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center text-indigo-400">
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Photo section */}
-        <div className="flex flex-col items-center mb-5">
-          {photoLockedByParent ? (
-            <>
-              <div className="w-20 h-20 rounded-full overflow-hidden bg-indigo-100 ring-4 ring-indigo-100">
-                <img src={child.photoUrl} alt={name} className="w-full h-full object-cover" />
-              </div>
-              <div className="mt-3 bg-amber-50 rounded-2xl px-4 py-2.5 text-center max-w-[240px]">
-                <p className="text-xs font-bold text-amber-600">📸 Photo set by parent</p>
-                <p className="text-[11px] text-indigo-400 font-semibold mt-0.5">
-                  The family has chosen this profile picture.
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="relative w-20 h-20 rounded-full overflow-hidden bg-indigo-100 ring-4 ring-indigo-100 active:scale-95 transition-transform"
-              >
-                {preview
-                  ? <img src={preview} alt={name} className="w-full h-full object-cover" />
-                  : <span className="font-black text-2xl text-indigo-300">{initials(name)}</span>}
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
-                  <Pencil size={18} className="text-white" />
-                </div>
-              </button>
-              <p className="text-xs text-indigo-400 font-semibold mt-2">
-                {uploading ? 'Uploading…' : 'Tap to change photo'}
-              </p>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoFile} />
-            </>
-          )}
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">Name</label>
-            <input
-              type="text" value={name} onChange={(e) => setName(e.target.value)} required
-              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
-              Date of birth <span className="normal-case font-semibold">(optional)</span>
-            </label>
-            <input
-              type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-rose-500 text-white font-black text-base rounded-2xl py-4 shadow-lg shadow-rose-200 active:scale-95 transition-transform mt-2"
-          >
-            Save Changes
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-/* ─── AddChildModal ─────────────────────────────────────────────────────── */
-
-function AddChildModal({ rooms, onClose, onAdd, hideRoom = false, userRole = 'educator' }) {
-  const [name,      setName]      = useState('');
-  const [birthdate, setBirthdate] = useState('');
-  const [roomId,    setRoomId]    = useState(rooms[0]?.id ?? '');
-  const [photoUrl,  setPhotoUrl]  = useState('');
-  const [preview,   setPreview]   = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef(null);
-
-  async function handlePhotoFile(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    const compressed = await compressProfilePhoto(file);
-    setPhotoUrl(compressed);
-    setPreview(compressed);
-    setUploading(false);
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    onAdd({
-      id:          `c${Date.now()}`,
-      name:        trimmed,
-      birthdate:   birthdate  || undefined,
-      photoUrl:    photoUrl   || undefined,
-      photoSource: photoUrl   ? userRole : undefined,
-      roomId:      hideRoom   ? undefined : roomId,
-    });
-    onClose();
-  }
-
-  return (
-    <div className="fixed inset-0 bg-indigo-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center px-4 pb-6">
-      <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="font-black text-xl text-indigo-900">Add Child</h2>
-          <button onClick={onClose} className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center text-indigo-400">
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Photo picker */}
-        <div className="flex flex-col items-center mb-5">
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="relative w-20 h-20 rounded-full overflow-hidden bg-indigo-100 ring-4 ring-indigo-100 active:scale-95 transition-transform"
-          >
-            {preview
-              ? <img src={preview} alt="Profile" className="w-full h-full object-cover" />
-              : <div className="w-full h-full flex items-center justify-center"><Plus size={24} className="text-indigo-300" /></div>}
-            <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
-              <Pencil size={18} className="text-white" />
-            </div>
-          </button>
-          <p className="text-xs text-indigo-400 font-semibold mt-2">
-            {uploading ? 'Uploading…' : 'Tap to add photo (optional)'}
-          </p>
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoFile} />
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">First name</label>
-            <input
-              type="text" value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="Child's first name" required
-              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400 placeholder:text-indigo-300"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
-              Date of birth <span className="normal-case font-semibold">(optional)</span>
-            </label>
-            <input
-              type="date" value={birthdate} onChange={(e) => setBirthdate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-              className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400"
-            />
-          </div>
-          {!hideRoom && (
-            <div>
-              <label className="block text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">Room</label>
-              <select
-                value={roomId} onChange={(e) => setRoomId(e.target.value)}
-                className="w-full bg-amber-50 rounded-2xl px-4 py-3.5 text-indigo-900 font-semibold outline-none focus:ring-2 focus:ring-rose-400 appearance-none"
-              >
-                {rooms.map((r) => (<option key={r.id} value={r.id}>{r.name}</option>))}
-              </select>
-            </div>
-          )}
-          <button type="submit" className="w-full bg-rose-500 text-white font-black text-base rounded-2xl py-4 shadow-lg shadow-rose-200 active:scale-95 transition-transform mt-2">
-            Add Child
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, updateChild, deletePortrait, logout }) {
   const navigate = useNavigate();
   const [selectedRoom,    setSelectedRoom]    = useState('all');
   const [selectedChildId, setSelectedChildId] = useState(null);
+  const [selectedEventTag,setSelectedEventTag]= useState(null);
   const [showAddChild,    setShowAddChild]    = useState(false);
   const [editingChild,    setEditingChild]    = useState(null);
+  const [roomToast,       setRoomToast]       = useState(null);
+  const migrationRan = useRef(false);
+
+  // Auto room progression on first mount
+  useEffect(() => {
+    if (migrationRan.current) return;
+    migrationRan.current = true;
+    const today = new Date();
+    let count = 0;
+    childrenList.forEach((child) => {
+      if (!child.birthdate) return;
+      const correct = calcRoomForAge(child.birthdate, today);
+      if (correct && correct !== child.roomId) {
+        updateChild(child.id, { roomId: correct });
+        count++;
+      }
+    });
+    if (count > 0) {
+      setRoomToast(count);
+      setTimeout(() => setRoomToast(null), 5000);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const visibleChildren = childrenList.filter(
     (c) => selectedRoom === 'all' || c.roomId === selectedRoom
   );
 
-  // Oldest-first — grid and slideshow both read chronologically
   const filteredPortraits = portraits
     .filter((p) => {
       if (p.source !== 'school') return false;
       const inView = p.taggedIds.some((id) => visibleChildren.some((c) => c.id === id));
       if (!inView) return false;
-      if (selectedChildId) return p.taggedIds.includes(selectedChildId);
+      if (selectedChildId && !p.taggedIds.includes(selectedChildId)) return false;
+      if (selectedEventTag && p.eventTag !== selectedEventTag) return false;
       return true;
     })
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // Slideshow plays oldest→newest even though grid shows newest→oldest
   const slideshowPortraits = [...filteredPortraits].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   function openSlideshow(portrait) {
@@ -915,6 +1133,16 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
 
   return (
     <div className="min-h-screen bg-amber-50 pb-28">
+
+      {/* Room migration toast */}
+      {roomToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+          <div className="bg-indigo-900 text-white rounded-2xl px-5 py-3 shadow-2xl text-sm font-bold flex items-center gap-2">
+            🎈 {roomToast} {roomToast === 1 ? 'child has' : 'children have'} been moved to a new room based on their birthdate
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white shadow-md shadow-indigo-100 px-5 pt-safe pt-4 pb-5 sticky top-0 z-20 rounded-b-3xl">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
@@ -974,12 +1202,22 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
             <span className="text-xs font-bold text-rose-400 w-16 text-center leading-tight">Add Child</span>
           </button>
         </div>
-        <p className="text-[10px] font-semibold text-indigo-300 mb-1 tracking-wide">
-          Hold a child to edit profile
+
+        {/* Consent dot legend */}
+        <p className="text-[10px] font-semibold text-indigo-300 mb-1 tracking-wide flex items-center gap-3">
+          <span>Hold to edit</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Consented</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Pending</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Declined</span>
         </p>
 
+        {/* Event tag filter */}
+        <div className="mt-3 mb-1">
+          <EventTagFilter selected={selectedEventTag} onSelect={setSelectedEventTag} />
+        </div>
+
         {/* Section heading */}
-        <div className="flex items-center justify-between mt-5 mb-3">
+        <div className="flex items-center justify-between mt-4 mb-3">
           <h2 className="font-black text-lg text-indigo-900">{sectionLabel}</h2>
           <span className="text-xs font-bold text-indigo-400 bg-white px-3 py-1.5 rounded-full shadow-sm">
             {filteredPortraits.length}
@@ -1044,12 +1282,12 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ROOT DASHBOARD — routes to the right view based on role
+   ROOT DASHBOARD
    ═══════════════════════════════════════════════════════════════════════ */
 
 export default function Dashboard() {
   const { user, logout, addChildToSession }          = useAuth();
-  const { portraits, childrenList, rooms, addChild, updateChild, deletePortrait } = useApp();
+  const { portraits, childrenList, rooms, addChild, updateChild, deletePortrait, approvePortraitForChild, declinePortraitForChild } = useApp();
 
   if (user?.role === 'parent') {
     return (
@@ -1062,6 +1300,8 @@ export default function Dashboard() {
         addChildToSession={addChildToSession}
         updateChild={updateChild}
         deletePortrait={deletePortrait}
+        approvePortraitForChild={approvePortraitForChild}
+        declinePortraitForChild={declinePortraitForChild}
       />
     );
   }

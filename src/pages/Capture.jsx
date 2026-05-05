@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, RotateCcw, Check, Upload, SwitchCamera, Plus, X } from 'lucide-react';
+import { ArrowLeft, Camera, RotateCcw, Check, Upload, SwitchCamera, X } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
+import { EVENT_TAGS } from '../data/seed';
 
 /* ─── Canvas helpers ──────────────────────────────────────────────────── */
 
@@ -65,48 +66,35 @@ function DuoSilhouette() {
       className="absolute inset-0 w-full h-full pointer-events-none"
       preserveAspectRatio="xMidYMid meet"
     >
-      {/* ── Left child ── center x=100 */}
-      {/* Head */}
       <circle cx="100" cy="112" r="50" {...o} className="silhouette-outline" />
-      {/* Body — broad shoulders (Q curves outward at top), narrows to bottom */}
       <path
         d="M 26 182 Q 100 160 174 182 C 174 298 160 392 142 424 Q 100 436 58 424 C 40 392 26 298 26 182 Z"
         {...o}
         className="silhouette-outline"
         style={{ animationDelay: '-0.7s' }}
       />
-
-      {/* ── Right child ── center x=300 */}
-      {/* Head */}
       <circle cx="300" cy="122" r="45" {...o}
         className="silhouette-outline"
         style={{ animationDelay: '-1.3s' }}
       />
-      {/* Body */}
       <path
         d="M 236 190 Q 300 170 364 190 C 364 303 351 393 334 424 Q 300 436 266 424 C 249 393 236 303 236 190 Z"
         {...o}
         className="silhouette-outline"
         style={{ animationDelay: '-2.0s' }}
       />
-
-      {/* Heart between the two figures */}
       <g transform="translate(200, 252)" opacity="0.52">
         <path
           d="M0,-10 C6,-18 16,-18 16,-8 C16,2 0,14 0,14 C0,14 -16,2 -16,-8 C-16,-18 -6,-18 0,-10 Z"
           fill="white"
         />
       </g>
-
-      {/* Sparkle — outer-top of left child */}
       <g transform="translate(46, 60)" opacity="0.42">
         <line x1="0" y1="-7" x2="0" y2="7" stroke="white" strokeWidth="2" strokeLinecap="round"/>
         <line x1="-7" y1="0" x2="7" y2="0" stroke="white" strokeWidth="2" strokeLinecap="round"/>
         <line x1="-5" y1="-5" x2="5" y2="5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
         <line x1="5" y1="-5" x2="-5" y2="5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
       </g>
-
-      {/* Sparkle — outer-top of right child */}
       <g transform="translate(354, 70)" opacity="0.42">
         <line x1="0" y1="-6" x2="0" y2="6" stroke="white" strokeWidth="2" strokeLinecap="round"/>
         <line x1="-6" y1="0" x2="6" y2="0" stroke="white" strokeWidth="2" strokeLinecap="round"/>
@@ -145,27 +133,35 @@ function FramingRules() {
   );
 }
 
+/* ─── Consent dot colours ─────────────────────────────────────────────── */
+
+const CONSENT_DOT = {
+  approved: 'bg-teal-400',
+  pending:  'bg-amber-400',
+  declined: 'bg-rose-500',
+  unlinked: 'bg-indigo-300',
+};
+
 /* ─── Capture page ────────────────────────────────────────────────────── */
 
 export default function Capture() {
-  const navigate                       = useNavigate();
-  const { childrenList, rooms, addPortrait, addChild } = useApp();
-  const { user, addChildToSession }    = useAuth();
-  const videoRef                       = useRef(null);
-  const streamRef                      = useRef(null);
-  const fileInputRef                   = useRef(null);
+  const navigate                          = useNavigate();
+  const { childrenList, addPortrait }     = useApp();
+  const { user }                          = useAuth();
+  const videoRef                          = useRef(null);
+  const streamRef                         = useRef(null);
+  const fileInputRef                      = useRef(null);
 
-  const [facingMode,    setFacingMode]    = useState('environment');
-  const [cameraActive,  setCameraActive]  = useState(false);
-  const [cameraError,   setCameraError]   = useState(null);
-  const [captured,      setCaptured]      = useState(null);
-  const [selectedIds,   setSelectedIds]   = useState([]);
-  const [notes,         setNotes]         = useState('');
-  const [saving,        setSaving]        = useState(false);
-  const [showNewChild,  setShowNewChild]  = useState(false);
-  const [newChildName,  setNewChildName]  = useState('');
-  const [newChildRoom,  setNewChildRoom]  = useState(rooms[0]?.id ?? '');
-  const [saved,         setSaved]         = useState(false);
+  const [facingMode,   setFacingMode]   = useState('environment');
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError,  setCameraError]  = useState(null);
+  const [captured,     setCaptured]     = useState(null);
+  const [selectedIds,  setSelectedIds]  = useState([]);
+  const [notes,        setNotes]        = useState('');
+  const [eventTag,     setEventTag]     = useState(null);
+  const [saving,       setSaving]       = useState(false);
+  const [saved,        setSaved]        = useState(false);
+  const [consentError, setConsentError] = useState('');
 
   /* ── Camera lifecycle ── */
 
@@ -222,6 +218,8 @@ export default function Capture() {
     setCaptured(null);
     setSelectedIds([]);
     setNotes('');
+    setEventTag(null);
+    setConsentError('');
     startCamera(facingMode);
   }
 
@@ -237,34 +235,53 @@ export default function Capture() {
   /* ── Tagging ── */
 
   function toggleChild(id) {
+    setConsentError('');
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   }
 
-  function handleAddNewChild(e) {
-    e.preventDefault();
-    const trimmed = newChildName.trim();
-    if (!trimmed) return;
-    const child = { id: `c${Date.now()}`, name: trimmed, roomId: newChildRoom };
-    addChild(child);
-    if (user?.role === 'parent') addChildToSession(child.id);
-    setSelectedIds((prev) => [...prev, child.id]);
-    setNewChildName('');
-    setShowNewChild(false);
-  }
-
   /* ── Save ── */
 
   function handleSave() {
+    // Consent gate: block if any tagged child has declined
+    const taggedChildren = selectedIds.map((id) => childrenList.find((c) => c.id === id)).filter(Boolean);
+    const declined = taggedChildren.filter((c) => c.consentStatus === 'declined');
+    if (declined.length > 0) {
+      const names = declined.map((c) => c.name).join(', ');
+      setConsentError(
+        `${names} ${declined.length === 1 ? 'has' : 'have'} not consented to photos being saved. Remove them to continue.`
+      );
+      return;
+    }
+
+    // Build pendingConsent: pending/unlinked children + cross-parent tagged children without autoApprove
+    const pendingIds = taggedChildren
+      .filter((c) => c.consentStatus === 'pending' || c.consentStatus === 'unlinked')
+      .map((c) => c.id);
+
+    const extraPending = [];
+    if (user?.role === 'parent') {
+      const myChildIds = user.childIds ?? [];
+      taggedChildren.forEach((c) => {
+        if (!myChildIds.includes(c.id) && !c.autoApproveTagging && !pendingIds.includes(c.id)) {
+          extraPending.push(c.id);
+        }
+      });
+    }
+
+    const allPendingIds = [...new Set([...pendingIds, ...extraPending])];
+
     setSaving(true);
     addPortrait({
-      id:        `p${Date.now()}`,
-      taggedIds: selectedIds,
-      date:      new Date().toISOString().split('T')[0],
-      notes:     notes.trim(),
-      photoUrl:  captured,
-      source:    user?.role === 'parent' ? 'parent' : 'school',
+      id:             `p${Date.now()}`,
+      taggedIds:      selectedIds,
+      date:           new Date().toISOString().split('T')[0],
+      notes:          notes.trim(),
+      photoUrl:       captured,
+      source:         user?.role === 'parent' ? 'parent' : 'school',
+      eventTag:       eventTag || null,
+      pendingConsent: allPendingIds,
     });
     setSaving(false);
     setSaved(true);
@@ -294,11 +311,9 @@ export default function Capture() {
         className={`relative w-full bg-black overflow-hidden ${captured ? 'flex-shrink-0' : 'flex-1 min-h-0'}`}
         style={captured ? { maxHeight: '28vh' } : undefined}
       >
-
         {!captured ? (
           <>
             {cameraError ? (
-              /* Error state */
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 p-8 text-center">
                 <p className="text-white/60 font-semibold text-sm">{cameraError}</p>
                 <button
@@ -321,7 +336,6 @@ export default function Capture() {
               </>
             )}
 
-            {/* Back */}
             <button
               onClick={() => { stopCamera(); navigate('/dashboard'); }}
               className="absolute top-4 left-4 w-10 h-10 bg-black/50 rounded-2xl flex items-center justify-center text-white z-10"
@@ -329,7 +343,6 @@ export default function Capture() {
               <ArrowLeft size={20} />
             </button>
 
-            {/* Flip camera */}
             {!cameraError && (
               <button
                 onClick={flipCamera}
@@ -340,7 +353,6 @@ export default function Capture() {
             )}
           </>
         ) : (
-          /* Captured preview */
           <>
             <img src={captured} alt="Captured" className="w-full h-full object-cover" />
             <button
@@ -363,8 +375,6 @@ export default function Capture() {
           >
             <Upload size={20} />
           </button>
-
-          {/* Shutter */}
           <button
             onClick={handleCapture}
             className="w-20 h-20 bg-rose-500 rounded-full flex items-center justify-center shadow-2xl shadow-rose-900 active:scale-90 transition-transform border-4 border-white/25"
@@ -372,7 +382,6 @@ export default function Capture() {
           >
             <Camera size={30} className="text-white" />
           </button>
-
           <div className="w-12 h-12" />
         </div>
       )}
@@ -399,6 +408,14 @@ export default function Capture() {
             </button>
           </div>
 
+          {/* Consent error */}
+          {consentError && (
+            <div className="bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 mb-3 flex items-start gap-2">
+              <span className="text-rose-500 text-base flex-shrink-0">🚫</span>
+              <p className="text-rose-700 font-bold text-sm leading-snug">{consentError}</p>
+            </div>
+          )}
+
           {/* Child checkboxes */}
           <div className="mb-3">
             <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
@@ -406,14 +423,19 @@ export default function Capture() {
             </p>
             <div className="grid grid-cols-2 gap-1.5">
               {childrenList.map((child) => {
-                const checked = selectedIds.includes(child.id);
+                const checked   = selectedIds.includes(child.id);
+                const status    = child.consentStatus ?? 'approved';
+                const dot       = CONSENT_DOT[status] ?? 'bg-indigo-300';
+                const isDeclined = status === 'declined';
                 return (
                   <button
                     key={child.id}
                     onClick={() => toggleChild(child.id)}
-                    className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 font-bold text-sm transition-all active:scale-95 ${
+                    className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 font-bold text-sm transition-all active:scale-95 relative ${
                       checked
-                        ? 'bg-rose-500 text-white shadow-md shadow-rose-200'
+                        ? isDeclined
+                          ? 'bg-rose-100 text-rose-700 shadow-sm'
+                          : 'bg-rose-500 text-white shadow-md shadow-rose-200'
                         : 'bg-white text-indigo-700 shadow-sm'
                     }`}
                   >
@@ -424,56 +446,40 @@ export default function Capture() {
                     >
                       {checked && <Check size={11} className="text-white" />}
                     </div>
-                    {child.name}
+                    <span className="flex-1 text-left truncate">{child.name}</span>
+                    {/* Consent status dot */}
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} title={status} />
                   </button>
                 );
               })}
             </div>
+            <p className="text-[10px] text-indigo-300 font-semibold mt-2 flex items-center gap-2">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Approved</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Pending</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Declined</span>
+            </p>
+          </div>
 
-            {/* Inline add new child */}
-            {showNewChild ? (
-              <form onSubmit={handleAddNewChild} className="mt-3 bg-white rounded-2xl p-4 shadow-sm border-2 border-dashed border-rose-200">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="font-extrabold text-indigo-900 text-sm">Add new child</p>
-                  <button type="button" onClick={() => setShowNewChild(false)} className="text-indigo-300">
-                    <X size={16} />
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  value={newChildName}
-                  onChange={(e) => setNewChildName(e.target.value)}
-                  placeholder="First name"
-                  autoFocus
-                  required
-                  className={`w-full bg-amber-50 rounded-xl px-3 py-2.5 text-indigo-900 font-semibold text-sm outline-none focus:ring-2 focus:ring-rose-400 placeholder:text-indigo-300 ${user?.role === 'educator' ? 'mb-2' : 'mb-3'}`}
-                />
-                {user?.role === 'educator' && (
-                  <select
-                    value={newChildRoom}
-                    onChange={(e) => setNewChildRoom(e.target.value)}
-                    className="w-full bg-amber-50 rounded-xl px-3 py-2.5 text-indigo-900 font-semibold text-sm outline-none focus:ring-2 focus:ring-rose-400 appearance-none mb-3"
-                  >
-                    {rooms.map((r) => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
-                )}
+          {/* Event tag picker */}
+          <div className="mb-3">
+            <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
+              Event <span className="normal-case font-semibold">(optional)</span>
+            </p>
+            <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 pb-1">
+              {EVENT_TAGS.map((tag) => (
                 <button
-                  type="submit"
-                  className="w-full bg-rose-500 text-white font-black text-sm rounded-xl py-2.5 active:scale-95 transition-transform"
+                  key={tag.id}
+                  onClick={() => setEventTag((prev) => (prev === tag.id ? null : tag.id))}
+                  className={`flex-shrink-0 px-3 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
+                    eventTag === tag.id
+                      ? 'bg-rose-500 text-white shadow-md'
+                      : 'bg-white text-indigo-600 shadow-sm'
+                  }`}
                 >
-                  Add &amp; Tag
+                  {tag.label}
                 </button>
-              </form>
-            ) : (
-              <button
-                onClick={() => setShowNewChild(true)}
-                className="mt-3 flex items-center gap-1.5 text-rose-500 font-bold text-sm"
-              >
-                <Plus size={15} /> Child not listed? Add them now
-              </button>
-            )}
+              ))}
+            </div>
           </div>
 
           {/* Notes */}
