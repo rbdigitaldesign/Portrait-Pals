@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Lock, ShieldOff, Sparkles, Trash2 } from 'lucide-react';
 
 const LAST_UPDATED = '30 April 2026';
 
@@ -14,13 +14,15 @@ function Section({ title, children }) {
   );
 }
 
-function Commitment({ emoji, title, body }) {
+function Commitment({ icon: Icon, iconBg, iconColor, title, body }) {
   return (
-    <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 flex gap-3">
-      <span className="text-2xl flex-shrink-0">{emoji}</span>
+    <div className="bg-white/10 border border-white/20 rounded-2xl p-4 flex gap-3">
+      <div className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+        <Icon size={17} className={iconColor} />
+      </div>
       <div>
-        <p className="font-black text-indigo-900 text-sm">{title}</p>
-        <p className="text-indigo-600 text-xs mt-0.5 leading-relaxed">{body}</p>
+        <p className="font-black text-white text-sm">{title}</p>
+        <p className="text-indigo-300 text-xs mt-0.5 leading-relaxed">{body}</p>
       </div>
     </div>
   );
@@ -57,22 +59,22 @@ export default function Privacy() {
           </p>
           <div className="space-y-3">
             <Commitment
-              emoji="🔒"
+              icon={Lock}      iconBg="bg-teal-500/20"   iconColor="text-teal-300"
               title="Your photos stay yours"
               body="Photos and children's information are only ever visible to the specific educator or parent accounts they are linked to. No one else can see them."
             />
             <Commitment
-              emoji="🚫"
+              icon={ShieldOff} iconBg="bg-rose-500/20"   iconColor="text-rose-300"
               title="Your data is never sold"
               body="We do not sell, rent, trade, or monetise your personal information or your children's photos — ever. Full stop."
             />
             <Commitment
-              emoji="🤖"
+              icon={Sparkles}  iconBg="bg-violet-500/20" iconColor="text-violet-300"
               title="No AI training on your images"
               body="Photos and personal data uploaded to Portrait Pals are never used to train, fine-tune, or improve any artificial intelligence or machine learning model."
             />
             <Commitment
-              emoji="🗑️"
+              icon={Trash2}    iconBg="bg-amber-500/20"  iconColor="text-amber-300"
               title="Delete anytime, completely"
               body="You can request deletion of your account and all associated data at any time. We will remove it fully within 30 days."
             />

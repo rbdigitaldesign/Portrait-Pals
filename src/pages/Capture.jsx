@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, RotateCcw, Check, Upload, SwitchCamera, X } from 'lucide-react';
+import { ArrowLeft, Camera, RotateCcw, Check, Upload, SwitchCamera, X, Ban, Users, Smile, Cake, MapPin, Star, PartyPopper, Home } from 'lucide-react';
+
+const EVENT_TAG_ICONS = { Cake, MapPin, Star, PartyPopper, Home };
+function EventTagIcon({ tag, size = 11 }) {
+  const Icon = EVENT_TAG_ICONS[tag?.icon];
+  return Icon ? <Icon size={size} /> : null;
+}
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { EVENT_TAGS } from '../data/seed';
@@ -108,9 +114,9 @@ function DuoSilhouette() {
 /* ─── Framing rule badges ─────────────────────────────────────────────── */
 
 const TIPS = [
-  { emoji: '👫', label: 'Side by side' },
-  { emoji: '📸', label: 'Face the camera' },
-  { emoji: '😄', label: 'Big smiles' },
+  { icon: Users,  label: 'Side by side'    },
+  { icon: Camera, label: 'Face the camera' },
+  { icon: Smile,  label: 'Big smiles'      },
 ];
 
 function FramingRules() {
@@ -120,12 +126,12 @@ function FramingRules() {
         Framing suggestions
       </p>
       <div className="flex justify-center gap-1.5 flex-wrap">
-        {TIPS.map(({ emoji, label }) => (
+        {TIPS.map(({ icon: Icon, label }) => (
           <span
             key={label}
-            className="bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-[11px] font-bold flex items-center gap-1"
+            className="bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-[11px] font-bold flex items-center gap-1.5"
           >
-            <span>{emoji}</span>{label}
+            <Icon size={12} />{label}
           </span>
         ))}
       </div>
@@ -299,7 +305,7 @@ export default function Capture() {
       {/* ── Declined child floating toast ── */}
       {declinedToast && (
         <div className="fixed top-4 left-4 right-4 z-50 bg-rose-900 text-white rounded-2xl px-4 py-4 shadow-2xl flex items-start gap-3">
-          <span className="text-xl flex-shrink-0">🚫</span>
+          <Ban size={18} className="flex-shrink-0 text-rose-300" />
           <p className="font-bold text-sm leading-snug">{declinedToast}</p>
         </div>
       )}
@@ -475,7 +481,7 @@ export default function Capture() {
                           }`}
                         >
                           {lockedIn
-                            ? <span className="text-white text-[11px] font-black">✕</span>
+                            ? <X size={11} className="text-white" strokeWidth={3} />
                             : checked && <Check size={11} className="text-white" />}
                         </div>
                         <span className="flex-1 text-left truncate">{child.name}</span>
@@ -503,12 +509,13 @@ export default function Capture() {
                 <button
                   key={tag.id}
                   onClick={() => setEventTag((prev) => (prev === tag.id ? null : tag.id))}
-                  className={`flex-shrink-0 px-3 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
                     eventTag === tag.id
                       ? 'bg-rose-500 text-white shadow-md'
                       : 'bg-white text-indigo-600 shadow-sm'
                   }`}
                 >
+                  <EventTagIcon tag={tag} />
                   {tag.label}
                 </button>
               ))}
