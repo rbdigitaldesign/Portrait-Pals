@@ -33,7 +33,7 @@ export const EVENT_TAGS = [
 export const CHILDREN = [
   // ── Existing children (kept from v9) ────────────────────────────────────
   { id: "c4",  name: "Mia",     roomId: "kindy",        consentStatus: "approved", parentEmail: "mia@parent.com",      autoApproveTagging: false },
-  { id: "c5",  name: "Maggie",  roomId: "pre-kindy",    consentStatus: "approved", parentEmail: "maggie@parent.com",   autoApproveTagging: false, photoUrl: "/images/maggie-profile.jpg", birthdate: "2024-07-07" },
+  { id: "c5",  name: "Maggie",  roomId: "pre-kindy",    consentStatus: "approved", parentEmail: "maggie@parent.com",   autoApproveTagging: false, photoUrl: "/images/maggie-profile.jpg", birthdate: "2023-07-09" },
   { id: "c6",  name: "Hailey",  roomId: "pre-kindy",    consentStatus: "approved", parentEmail: "hailey@parent.com",   autoApproveTagging: false },
   { id: "c7",  name: "Elenor",  roomId: "baby-toddler", consentStatus: "pending",  parentEmail: "elenor@parent.com",   autoApproveTagging: false },
   { id: "c8",  name: "Jake",    roomId: "baby-toddler", consentStatus: "approved", parentEmail: "siblings@parent.com", autoApproveTagging: true,  photoUrl: "/images/jake-profile.jpg",   birthdate: "2022-06-01" },
