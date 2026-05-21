@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2, Shield, Bell, Clock, Check, ArrowRight, GraduationCap, Cake, MapPin, Star, PartyPopper, Home } from 'lucide-react';
+import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2, Shield, Bell, Clock, Check, ArrowRight, GraduationCap, Cake, MapPin, Star, PartyPopper, Home, Sun, Heart, Frame, Users2, CheckCircle, ArrowDown, Sparkles, Smile } from 'lucide-react';
 
 const EVENT_TAG_ICONS = { Cake, MapPin, Star, PartyPopper, Home };
 function EventTagIcon({ tag, size = 10, className = '' }) {
@@ -11,8 +11,22 @@ function EventTagIcon({ tag, size = 10, className = '' }) {
 function sourceLabel(portrait, childrenList) {
   if (portrait.source === 'parent') return 'Family Snap';
   const firstChild = portrait.taggedIds.map((id) => childrenList.find((c) => c.id === id)).filter(Boolean)[0];
-  return ROOMS.find((r) => r.id === firstChild?.roomId)?.label ?? 'School';
+  return ROOMS.find((r) => r.id === firstChild?.roomId)?.name ?? 'School';
 }
+
+const CAPTURE_TIPS = [
+  { id: 'side-by-side', icon: 'Users',        headline: 'Side by side',            description: 'Position children shoulder-to-shoulder so both faces are clearly visible in the frame.' },
+  { id: 'eye-level',    icon: 'ArrowDown',     headline: 'Get down to their level', description: 'Crouch so the camera is at eye height — it transforms a snapshot into a real connection.' },
+  { id: 'lighting',     icon: 'Sun',           headline: 'Chase the light',         description: 'Face children toward a window or outdoor light source to avoid harsh shadows across their faces.' },
+  { id: 'candid',       icon: 'Sparkles',      headline: 'Capture the candid',      description: 'Wait a beat after the posed smile fades — genuine laughs make the most memorable portraits.' },
+  { id: 'connection',   icon: 'Heart',         headline: 'Show the connection',     description: 'A hand on a shoulder or a shared look tells a richer story than posed faces alone.' },
+  { id: 'distance',     icon: 'Shield',        headline: 'Respectful distance',     description: 'Use zoom rather than crowding children — they\'re more natural when you\'re not too close.' },
+  { id: 'background',   icon: 'Frame',         headline: 'Clean the background',    description: 'A simple background keeps families\' attention on the children, not the surroundings.' },
+  { id: 'smile',        icon: 'Smile',         headline: 'Big smiles on cue',       description: 'Ask for their "special smile" — then snap the moment right after they start giggling.' },
+  { id: 'group',        icon: 'Users2',        headline: 'Small groups are best',   description: 'Two or three children creates intimacy. Larger groups are harder to keep in focus.' },
+  { id: 'consent',      icon: 'CheckCircle',   headline: 'Consent first, always',   description: 'Check the coloured dots before saving — teal means approved, amber means pending.' },
+];
+const TIP_ICONS = { Users, Users2, Sun, Heart, Frame, Smile, Shield, CheckCircle, ArrowDown, Sparkles, Camera };
 import { useAuth } from '../contexts/AuthContext';
 import { useApp, calcRoomForAge } from '../contexts/AppContext';
 import { EVENT_TAGS, ROOMS } from '../data/seed';
@@ -522,6 +536,70 @@ function EventTagFilter({ selected, onSelect, exclude = [] }) {
           {tag.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+/* ─── Capture tip card ───────────────────────────────────────────────────── */
+
+function CaptureTipCard({ tip, featured = false }) {
+  const Icon = TIP_ICONS[tip.icon] ?? Camera;
+  return (
+    <div
+      className={`flex-shrink-0 rounded-3xl p-4 flex flex-col gap-2 select-none ${
+        featured
+          ? 'bg-rose-500 text-white w-56 shadow-lg shadow-rose-200'
+          : 'bg-white text-indigo-900 w-48 shadow-md shadow-indigo-100'
+      }`}
+    >
+      <div className={`w-9 h-9 rounded-2xl flex items-center justify-center ${featured ? 'bg-white/20' : 'bg-rose-50'}`}>
+        <Icon size={18} className={featured ? 'text-white' : 'text-rose-500'} />
+      </div>
+      <p className={`font-black text-sm leading-tight ${featured ? 'text-white' : 'text-indigo-900'}`}>
+        {tip.headline}
+      </p>
+      <p className={`text-xs font-semibold leading-snug ${featured ? 'text-white/80' : 'text-indigo-400'}`}>
+        {tip.description}
+      </p>
+      {featured && (
+        <span className="text-[10px] font-extrabold text-white/60 uppercase tracking-widest mt-auto">
+          Tip of the day
+        </span>
+      )}
+    </div>
+  );
+}
+
+function CaptureTipsStrip() {
+  const featured = CAPTURE_TIPS[new Date().getDate() % CAPTURE_TIPS.length];
+  const rest     = CAPTURE_TIPS.filter((t) => t.id !== featured.id);
+  const ordered  = [featured, ...rest];
+  return (
+    <div className="mb-5">
+      <div className="flex items-center justify-between mb-2.5">
+        <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest">Capture tips</p>
+        <span className="text-[10px] font-bold text-indigo-300">{CAPTURE_TIPS.length} tips</span>
+      </div>
+      <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-1 px-1 pb-2">
+        {ordered.map((tip, i) => (
+          <CaptureTipCard key={tip.id} tip={tip} featured={i === 0} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QuickStats({ portraitsThisWeek, childrenPhotographedToday }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 mb-5">
+      <div className="bg-white rounded-3xl px-4 py-4 shadow-md shadow-indigo-100 text-center">
+        <p className="font-black text-2xl text-rose-500">{portraitsThisWeek}</p>
+        <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">portraits this week</p>
+      </div>
+      <div className="bg-white rounded-3xl px-4 py-4 shadow-md shadow-indigo-100 text-center">
+        <p className="font-black text-2xl text-teal-500">{childrenPhotographedToday}</p>
+        <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">children photographed today</p>
+      </div>
     </div>
   );
 }
@@ -1197,6 +1275,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
   const [showAddChild,    setShowAddChild]    = useState(false);
   const [editingChild,    setEditingChild]    = useState(null);
   const [roomToast,       setRoomToast]       = useState(null);
+  const [activeTab,       setActiveTab]       = useState('capture');
   const migrationRan = useRef(false);
 
   // Auto room progression on first mount
@@ -1227,7 +1306,6 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
   const filteredPortraits = portraits
     .filter((p) => {
       if (p.source !== 'school') return false;
-      // Hide portraits that are still awaiting family consent — visible only via admin
       if ((p.pendingConsent?.length ?? 0) > 0) return false;
       const inView = p.taggedIds.some((id) => visibleChildren.some((c) => c.id === id));
       if (!inView) return false;
@@ -1238,6 +1316,20 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const slideshowPortraits = [...filteredPortraits].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // Quick stats
+  const todayStr = new Date().toISOString().split('T')[0];
+  const startOfWeek = (() => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(new Date().setDate(diff)).toISOString().split('T')[0];
+  })();
+  const schoolPortraits = portraits.filter((p) => p.source === 'school');
+  const portraitsThisWeek = schoolPortraits.filter((p) => p.date >= startOfWeek).length;
+  const childrenPhotographedToday = new Set(
+    schoolPortraits.filter((p) => p.date === todayStr).flatMap((p) => p.taggedIds)
+  ).size;
 
   function openSlideshow(portrait) {
     navigate('/slideshow', {
@@ -1258,7 +1350,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
     : 'Friendship Portraits';
 
   return (
-    <div className="min-h-screen bg-amber-50 pb-28">
+    <div className="min-h-screen bg-amber-50 pb-8">
 
       {/* Room migration toast */}
       {roomToast && (
@@ -1288,107 +1380,202 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
       </div>
 
       <div className="max-w-2xl mx-auto px-4">
-        {/* Room tabs */}
-        <div className="flex gap-2 pt-5 pb-1 overflow-x-auto scrollbar-none -mx-1 px-1">
-          {['all', ...rooms.map((r) => r.id)].map((roomId) => {
-            const label = roomId === 'all' ? 'All Rooms' : rooms.find((r) => r.id === roomId)?.name ?? roomId;
-            return (
-              <button
-                key={roomId}
-                onClick={() => handleRoomChange(roomId)}
-                className={`flex-shrink-0 px-4 py-2.5 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
-                  selectedRoom === roomId
-                    ? 'bg-rose-500 text-white shadow-md shadow-rose-200'
-                    : 'bg-white text-indigo-600 shadow-sm'
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
 
-        {/* Children strip */}
-        <div className="flex gap-4 pt-4 pb-2 overflow-x-auto scrollbar-none -mx-1 px-1">
-          {visibleChildren.map((child) => (
-            <ChildChip
-              key={child.id}
-              child={child}
-              active={!selectedChildId || selectedChildId === child.id}
-              onClick={() => setSelectedChildId((prev) => (prev === child.id ? null : child.id))}
-              onLongPress={() => setEditingChild(child)}
-            />
+        {/* Tab strip */}
+        <div className="flex gap-2 pt-4 pb-1">
+          {[
+            { id: 'capture',   label: 'Capture',   Icon: Camera },
+            { id: 'portraits', label: 'Portraits',  Icon: Users  },
+          ].map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-sm transition-all active:scale-95 ${
+                activeTab === id
+                  ? 'bg-indigo-900 text-white shadow-md'
+                  : 'bg-white text-indigo-400 shadow-sm'
+              }`}
+            >
+              <Icon size={15} />
+              {label}
+            </button>
           ))}
-          <button
-            onClick={() => setShowAddChild(true)}
-            className="flex flex-col items-center gap-1.5 flex-shrink-0"
-          >
-            <div className="w-14 h-14 rounded-2xl border-2 border-dashed border-rose-300 flex items-center justify-center text-rose-400 active:scale-95 transition-transform">
-              <Plus size={22} />
+        </div>
+
+        {/* ── Tab 1: Capture ── */}
+        {activeTab === 'capture' && (
+          <div>
+            {/* Hero CTA */}
+            <button
+              onClick={() => navigate('/capture')}
+              className="w-full bg-rose-500 text-white font-black text-xl rounded-3xl py-6 flex items-center justify-center gap-3 shadow-2xl shadow-rose-200 active:scale-95 transition-transform mt-4 mb-5"
+            >
+              <Camera size={26} />
+              Capture Portrait
+            </button>
+
+            {/* Quick stats */}
+            <QuickStats
+              portraitsThisWeek={portraitsThisWeek}
+              childrenPhotographedToday={childrenPhotographedToday}
+            />
+
+            {/* Compact room filter */}
+            <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 mb-3 pb-1">
+              {['all', ...rooms.map((r) => r.id)].map((roomId) => {
+                const label = roomId === 'all' ? 'All' : rooms.find((r) => r.id === roomId)?.name ?? roomId;
+                return (
+                  <button
+                    key={roomId}
+                    onClick={() => handleRoomChange(roomId)}
+                    className={`flex-shrink-0 px-3 py-1.5 rounded-2xl font-bold text-xs transition-all active:scale-95 ${
+                      selectedRoom === roomId
+                        ? 'bg-rose-500 text-white shadow-md shadow-rose-200'
+                        : 'bg-white text-indigo-600 shadow-sm'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
-            <span className="text-xs font-bold text-rose-400 w-16 text-center leading-tight">Add Child</span>
-          </button>
-        </div>
 
-        {/* Consent dot legend */}
-        <p className="text-[10px] font-semibold text-indigo-300 mb-1 tracking-wide flex items-center gap-3 flex-wrap">
-          <span>Hold to edit</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Photos approved</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Pending approval</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Photos declined</span>
-        </p>
-
-        {/* Event tag filter — Family Moment excluded (parent-only, not visible to educators) */}
-        <div className="mt-3 mb-1">
-          <EventTagFilter selected={selectedEventTag} onSelect={setSelectedEventTag} exclude={['family']} />
-        </div>
-
-        {/* Section heading */}
-        <div className="flex items-center justify-between mt-4 mb-3">
-          <h2 className="font-black text-lg text-indigo-900">{sectionLabel}</h2>
-          <span className="text-xs font-bold text-indigo-400 bg-white px-3 py-1.5 rounded-full shadow-sm">
-            {filteredPortraits.length}
-          </span>
-        </div>
-
-        {/* Portrait grid */}
-        {filteredPortraits.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-20 h-20 bg-rose-100 rounded-3xl flex items-center justify-center mb-4">
-              <Users size={34} className="text-rose-300" />
+            {/* Children strip */}
+            <div className="mb-2">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest">
+                  {selectedRoom === 'all' ? 'All Children' : rooms.find((r) => r.id === selectedRoom)?.name ?? 'Children'}
+                </p>
+                <span className="text-[10px] font-bold text-indigo-300">{visibleChildren.length} children</span>
+              </div>
+              <div className="flex gap-4 overflow-x-auto scrollbar-none -mx-1 px-1 pb-2">
+                {visibleChildren.map((child) => (
+                  <ChildChip
+                    key={child.id}
+                    child={child}
+                    active={!selectedChildId || selectedChildId === child.id}
+                    onClick={() => setSelectedChildId((prev) => (prev === child.id ? null : child.id))}
+                    onLongPress={() => setEditingChild(child)}
+                  />
+                ))}
+                <button
+                  onClick={() => setShowAddChild(true)}
+                  className="flex flex-col items-center gap-1.5 flex-shrink-0"
+                >
+                  <div className="w-14 h-14 rounded-2xl border-2 border-dashed border-rose-300 flex items-center justify-center text-rose-400 active:scale-95 transition-transform">
+                    <Plus size={22} />
+                  </div>
+                  <span className="text-xs font-bold text-rose-400 w-16 text-center leading-tight">Add Child</span>
+                </button>
+              </div>
+              <p className="text-[10px] font-semibold text-indigo-300 mt-1 tracking-wide flex items-center gap-3 flex-wrap">
+                <span>Hold to edit</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Approved</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Pending</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Declined</span>
+              </p>
             </div>
-            <p className="font-black text-indigo-900 text-lg">No portraits yet</p>
-            <p className="text-indigo-400 text-sm font-semibold mt-1 max-w-xs">
-              Tap the camera button to capture a friendship moment.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {filteredPortraits.map((portrait) => (
-              <PortraitCard
-                key={portrait.id}
-                portrait={portrait}
-                childrenList={childrenList}
-                onClick={() => openSlideshow(portrait)}
-                onDelete={() => deletePortrait(portrait.id)}
-              />
-            ))}
+
+            {/* Capture tips strip */}
+            <div className="mt-6">
+              <CaptureTipsStrip />
+            </div>
           </div>
         )}
-      </div>
 
-      {/* Sticky bottom: Capture Portrait */}
-      <div
-        className="fixed bottom-0 left-0 right-0 px-5 pt-6 z-20 bg-gradient-to-t from-amber-50 via-amber-50/90 to-transparent"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)' }}
-      >
-        <button
-          onClick={() => navigate('/capture')}
-          className="w-full bg-rose-500 text-white font-black text-lg rounded-2xl py-4 flex items-center justify-center gap-2.5 shadow-2xl shadow-rose-300 active:scale-95 transition-transform"
-        >
-          <Camera size={20} />
-          Capture Portrait
-        </button>
+        {/* ── Tab 2: Portraits ── */}
+        {activeTab === 'portraits' && (
+          <div>
+            {/* Room tabs */}
+            <div className="flex gap-2 pt-5 pb-1 overflow-x-auto scrollbar-none -mx-1 px-1">
+              {['all', ...rooms.map((r) => r.id)].map((roomId) => {
+                const label = roomId === 'all' ? 'All Rooms' : rooms.find((r) => r.id === roomId)?.name ?? roomId;
+                return (
+                  <button
+                    key={roomId}
+                    onClick={() => handleRoomChange(roomId)}
+                    className={`flex-shrink-0 px-4 py-2.5 rounded-2xl font-bold text-sm transition-all active:scale-95 ${
+                      selectedRoom === roomId
+                        ? 'bg-rose-500 text-white shadow-md shadow-rose-200'
+                        : 'bg-white text-indigo-600 shadow-sm'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Children strip */}
+            <div className="flex gap-4 pt-4 pb-2 overflow-x-auto scrollbar-none -mx-1 px-1">
+              {visibleChildren.map((child) => (
+                <ChildChip
+                  key={child.id}
+                  child={child}
+                  active={!selectedChildId || selectedChildId === child.id}
+                  onClick={() => setSelectedChildId((prev) => (prev === child.id ? null : child.id))}
+                  onLongPress={() => setEditingChild(child)}
+                />
+              ))}
+              <button
+                onClick={() => setShowAddChild(true)}
+                className="flex flex-col items-center gap-1.5 flex-shrink-0"
+              >
+                <div className="w-14 h-14 rounded-2xl border-2 border-dashed border-rose-300 flex items-center justify-center text-rose-400 active:scale-95 transition-transform">
+                  <Plus size={22} />
+                </div>
+                <span className="text-xs font-bold text-rose-400 w-16 text-center leading-tight">Add Child</span>
+              </button>
+            </div>
+
+            {/* Consent dot legend */}
+            <p className="text-[10px] font-semibold text-indigo-300 mb-1 tracking-wide flex items-center gap-3 flex-wrap">
+              <span>Hold to edit</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Photos approved</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Pending approval</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Photos declined</span>
+            </p>
+
+            {/* Event tag filter */}
+            <div className="mt-3 mb-1">
+              <EventTagFilter selected={selectedEventTag} onSelect={setSelectedEventTag} exclude={['family']} />
+            </div>
+
+            {/* Section heading */}
+            <div className="flex items-center justify-between mt-4 mb-3">
+              <h2 className="font-black text-lg text-indigo-900">{sectionLabel}</h2>
+              <span className="text-xs font-bold text-indigo-400 bg-white px-3 py-1.5 rounded-full shadow-sm">
+                {filteredPortraits.length}
+              </span>
+            </div>
+
+            {/* Portrait grid */}
+            {filteredPortraits.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-20 h-20 bg-rose-100 rounded-3xl flex items-center justify-center mb-4">
+                  <Users size={34} className="text-rose-300" />
+                </div>
+                <p className="font-black text-indigo-900 text-lg">No portraits yet</p>
+                <p className="text-indigo-400 text-sm font-semibold mt-1 max-w-xs">
+                  Switch to Capture to photograph a friendship moment.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 pb-6">
+                {filteredPortraits.map((portrait) => (
+                  <PortraitCard
+                    key={portrait.id}
+                    portrait={portrait}
+                    childrenList={childrenList}
+                    onClick={() => openSlideshow(portrait)}
+                    onDelete={() => deletePortrait(portrait.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {showAddChild && (
