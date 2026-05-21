@@ -564,7 +564,7 @@ function CaptureTipsStrip() {
   return (
     <div className="mb-2">
       {/* Stack wrapper */}
-      <div className="relative cursor-pointer select-none" style={{ height: 140 }} onClick={next}>
+      <div className="relative cursor-pointer select-none" style={{ height: 220 }} onClick={next}>
 
         {/* Back card */}
         <div
@@ -589,11 +589,11 @@ function CaptureTipsStrip() {
                 : ''
           }`}
         >
-          <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Icon size={16} className="text-white" />
+          <div className="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <Icon size={22} className="text-white" />
           </div>
-          <p className="font-black text-white text-base leading-tight">{tip.headline}</p>
-          <p className="text-white/75 font-semibold text-xs leading-snug flex-1 line-clamp-2">{tip.description}</p>
+          <p className="font-black text-white text-xl leading-tight">{tip.headline}</p>
+          <p className="text-white/75 font-semibold text-sm leading-snug flex-1">{tip.description}</p>
           <div className="flex items-center justify-between">
             <span className="text-white/40 text-[10px] font-extrabold uppercase tracking-widest">Tap to shuffle</span>
             <span className="text-white/35 text-[10px] font-bold">{currentIdx + 1} / {n}</span>
@@ -1438,7 +1438,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
               <button
                 onClick={() => navigate('/capture')}
                 className="w-64 h-64 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform border-4 border-white"
-                style={{ background: 'linear-gradient(135deg, #47b3ec, #39a6e8)', boxShadow: '0 24px 60px #39a6e850' }}
+                style={{ background: 'linear-gradient(135deg, #47b3ec, #39a6e8)', boxShadow: '0 12px 30px #39a6e828' }}
               >
                 <Camera size={80} className="text-white" />
               </button>
