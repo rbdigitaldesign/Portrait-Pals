@@ -573,20 +573,20 @@ function CaptureTipsStrip() {
 
         {/* Back card */}
         <div
-          className="absolute inset-x-0 rounded-3xl bg-violet-100"
+          className="absolute inset-x-0 rounded-3xl bg-indigo-200"
           style={{ top: 10, bottom: 0, transform: 'rotate(3.5deg) translateX(4px)' }}
         />
 
         {/* Middle card */}
         <div
-          className="absolute inset-x-0 rounded-3xl bg-violet-200"
+          className="absolute inset-x-0 rounded-3xl bg-indigo-400"
           style={{ top: 5, bottom: 0, transform: 'rotate(-2deg) translateX(-2px)' }}
         />
 
         {/* Front card — exits on click, enters on index change */}
         <div
           key={currentIdx}
-          className={`absolute inset-x-0 top-0 bottom-0 rounded-3xl bg-violet-400 shadow-xl shadow-violet-200 p-5 flex flex-col gap-2 ${
+          className={`absolute inset-x-0 top-0 bottom-0 rounded-3xl bg-indigo-900 shadow-xl shadow-indigo-200 p-5 flex flex-col gap-2 ${
             exiting
               ? 'animate-card-exit'
               : interacted.current
@@ -613,11 +613,11 @@ function QuickStats({ portraitsThisWeek, childrenPhotographedToday }) {
   return (
     <div className="grid grid-cols-2 gap-3 mb-5">
       <div className="bg-white rounded-3xl px-4 py-4 shadow-md shadow-indigo-100 text-center">
-        <p className="font-black text-2xl text-rose-500">{portraitsThisWeek}</p>
+        <p className="font-black text-2xl text-indigo-900">{portraitsThisWeek}</p>
         <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">portraits this week</p>
       </div>
       <div className="bg-white rounded-3xl px-4 py-4 shadow-md shadow-indigo-100 text-center">
-        <p className="font-black text-2xl text-teal-500">{childrenPhotographedToday}</p>
+        <p className="font-black text-2xl text-indigo-900">{childrenPhotographedToday}</p>
         <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">children photographed today</p>
       </div>
     </div>
@@ -1455,7 +1455,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
                     onClick={() => handleRoomChange(roomId)}
                     className={`flex-shrink-0 px-3 py-1.5 rounded-2xl font-bold text-xs transition-all active:scale-95 ${
                       selectedRoom === roomId
-                        ? 'bg-rose-500 text-white shadow-md shadow-rose-200'
+                        ? 'bg-indigo-900 text-white shadow-md shadow-indigo-200'
                         : 'bg-white text-indigo-600 shadow-sm'
                     }`}
                   >
@@ -1499,7 +1499,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
                       <ChildChip
                         key={child.id}
                         child={child}
-                        active={true}
+                        active={false}
                         onClick={() => {}}
                         onLongPress={() => setEditingChild(child)}
                       />
