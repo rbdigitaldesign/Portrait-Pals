@@ -573,20 +573,20 @@ function CaptureTipsStrip() {
 
         {/* Back card */}
         <div
-          className="absolute inset-x-0 rounded-3xl bg-rose-100"
+          className="absolute inset-x-0 rounded-3xl bg-violet-100"
           style={{ top: 10, bottom: 0, transform: 'rotate(3.5deg) translateX(4px)' }}
         />
 
         {/* Middle card */}
         <div
-          className="absolute inset-x-0 rounded-3xl bg-rose-300"
+          className="absolute inset-x-0 rounded-3xl bg-violet-200"
           style={{ top: 5, bottom: 0, transform: 'rotate(-2deg) translateX(-2px)' }}
         />
 
         {/* Front card — exits on click, enters on index change */}
         <div
           key={currentIdx}
-          className={`absolute inset-x-0 top-0 bottom-0 rounded-3xl bg-rose-500 shadow-xl shadow-rose-200 p-5 flex flex-col gap-2 ${
+          className={`absolute inset-x-0 top-0 bottom-0 rounded-3xl bg-violet-400 shadow-xl shadow-violet-200 p-5 flex flex-col gap-2 ${
             exiting
               ? 'animate-card-exit'
               : interacted.current
