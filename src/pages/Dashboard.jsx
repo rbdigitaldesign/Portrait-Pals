@@ -1588,17 +1588,58 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
             </div>
 
             {/* Portrait grid */}
-            {filteredPortraits.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-20 h-20 bg-rose-100 rounded-3xl flex items-center justify-center mb-4">
-                  <Users size={34} className="text-rose-300" />
+            {filteredPortraits.length === 0 ? (() => {
+              const child = childrenList.find((c) => c.id === selectedChildId);
+              const status = child?.consentStatus;
+
+              if (status === 'declined') return (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-20 h-20 bg-rose-100 rounded-3xl flex items-center justify-center mb-4">
+                    <Shield size={34} className="text-rose-400" />
+                  </div>
+                  <p className="font-black text-rose-500 text-lg">Photography declined</p>
+                  <p className="text-indigo-400 text-sm font-semibold mt-2 max-w-xs leading-snug">
+                    {child.name}'s family has opted out of photography. They can still be part of the community — just no portraits.
+                  </p>
                 </div>
-                <p className="font-black text-indigo-900 text-lg">No portraits yet</p>
-                <p className="text-indigo-400 text-sm font-semibold mt-1 max-w-xs">
-                  Switch to Capture to photograph a friendship moment.
-                </p>
-              </div>
-            ) : (
+              );
+
+              if (status === 'pending') return (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-20 h-20 bg-amber-100 rounded-3xl flex items-center justify-center mb-4">
+                    <Clock size={34} className="text-amber-400" />
+                  </div>
+                  <p className="font-black text-amber-500 text-lg">Consent pending</p>
+                  <p className="text-indigo-400 text-sm font-semibold mt-2 max-w-xs leading-snug">
+                    {child.name}'s parent hasn't responded yet. Portraits will appear here once they approve.
+                  </p>
+                </div>
+              );
+
+              if (status === 'unlinked') return (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-20 h-20 bg-indigo-100 rounded-3xl flex items-center justify-center mb-4">
+                    <Users size={34} className="text-indigo-300" />
+                  </div>
+                  <p className="font-black text-indigo-900 text-lg">No parent linked yet</p>
+                  <p className="text-indigo-400 text-sm font-semibold mt-2 max-w-xs leading-snug">
+                    {child.name} doesn't have a parent account set up. Invite them to join Portrait Pals to enable consent and portraits.
+                  </p>
+                </div>
+              );
+
+              return (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-20 h-20 bg-rose-100 rounded-3xl flex items-center justify-center mb-4">
+                    <Users size={34} className="text-rose-300" />
+                  </div>
+                  <p className="font-black text-indigo-900 text-lg">No portraits yet</p>
+                  <p className="text-indigo-400 text-sm font-semibold mt-2 max-w-xs">
+                    Switch to Capture to photograph a friendship moment.
+                  </p>
+                </div>
+              );
+            })() : (
               <div className="grid grid-cols-2 gap-3 pb-6">
                 {filteredPortraits.map((portrait) => (
                   <PortraitCard
