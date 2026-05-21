@@ -1414,6 +1414,9 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
               Capture Portrait
             </button>
 
+            {/* Capture tips strip — directly under the button */}
+            <CaptureTipsStrip />
+
             {/* Quick stats */}
             <QuickStats
               portraitsThisWeek={portraitsThisWeek}
@@ -1440,46 +1443,50 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
               })}
             </div>
 
-            {/* Children strip */}
-            <div className="mb-2">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest">
-                  {selectedRoom === 'all' ? 'All Children' : rooms.find((r) => r.id === selectedRoom)?.name ?? 'Children'}
-                </p>
-                <span className="text-[10px] font-bold text-indigo-300">{visibleChildren.length} children</span>
-              </div>
-              <div className="flex gap-4 overflow-x-auto scrollbar-none -mx-1 px-1 pb-2">
-                {visibleChildren.map((child) => (
-                  <ChildChip
-                    key={child.id}
-                    child={child}
-                    active={!selectedChildId || selectedChildId === child.id}
-                    onClick={() => setSelectedChildId((prev) => (prev === child.id ? null : child.id))}
-                    onLongPress={() => setEditingChild(child)}
-                  />
-                ))}
-                <button
-                  onClick={() => setShowAddChild(true)}
-                  className="flex flex-col items-center gap-1.5 flex-shrink-0"
-                >
-                  <div className="w-14 h-14 rounded-2xl border-2 border-dashed border-rose-300 flex items-center justify-center text-rose-400 active:scale-95 transition-transform">
-                    <Plus size={22} />
+            {/* Declined children — cannot be photographed */}
+            {(() => {
+              const declined = childrenList.filter(
+                (c) => c.consentStatus === 'declined' &&
+                  (selectedRoom === 'all' || c.roomId === selectedRoom)
+              );
+              if (declined.length === 0) {
+                return (
+                  <div className="bg-teal-50 rounded-2xl px-4 py-3 mb-5 flex items-center gap-2.5">
+                    <CheckCircle size={14} className="text-teal-500 flex-shrink-0" />
+                    <p className="text-xs font-semibold text-teal-700">
+                      {selectedRoom === 'all' ? 'All children' : 'All children in this room'} are available to photograph.
+                    </p>
                   </div>
-                  <span className="text-xs font-bold text-rose-400 w-16 text-center leading-tight">Add Child</span>
-                </button>
-              </div>
-              <p className="text-[10px] font-semibold text-indigo-300 mt-1 tracking-wide flex items-center gap-3 flex-wrap">
-                <span>Hold to edit</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-400 inline-block" />Approved</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Pending</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Declined</span>
-              </p>
-            </div>
-
-            {/* Capture tips strip */}
-            <div className="mt-6">
-              <CaptureTipsStrip />
-            </div>
+                );
+              }
+              return (
+                <div className="mb-5">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <p className="text-xs font-extrabold text-rose-500 uppercase tracking-widest">
+                      Cannot be photographed
+                    </p>
+                    <span className="bg-rose-500 text-white font-black text-[10px] w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0">
+                      {declined.length}
+                    </span>
+                  </div>
+                  <p className="text-[10px] font-semibold text-rose-400 mb-2.5 leading-snug">
+                    These children have opted out — do not include them in photos.
+                  </p>
+                  <div className="flex gap-4 overflow-x-auto scrollbar-none -mx-1 px-1 pb-2">
+                    {declined.map((child) => (
+                      <ChildChip
+                        key={child.id}
+                        child={child}
+                        active={true}
+                        onClick={() => {}}
+                        onLongPress={() => setEditingChild(child)}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-[10px] font-semibold text-indigo-300 mt-1">Hold to edit</p>
+                </div>
+              );
+            })()}
           </div>
         )}
 
