@@ -540,50 +540,70 @@ function EventTagFilter({ selected, onSelect, exclude = [] }) {
   );
 }
 
-/* ─── Capture tip card ───────────────────────────────────────────────────── */
-
-function CaptureTipCard({ tip, featured = false }) {
-  const Icon = TIP_ICONS[tip.icon] ?? Camera;
-  return (
-    <div
-      className={`flex-shrink-0 rounded-3xl p-4 flex flex-col gap-2 select-none ${
-        featured
-          ? 'bg-rose-500 text-white w-56 shadow-lg shadow-rose-200'
-          : 'bg-white text-indigo-900 w-48 shadow-md shadow-indigo-100'
-      }`}
-    >
-      <div className={`w-9 h-9 rounded-2xl flex items-center justify-center ${featured ? 'bg-white/20' : 'bg-rose-50'}`}>
-        <Icon size={18} className={featured ? 'text-white' : 'text-rose-500'} />
-      </div>
-      <p className={`font-black text-sm leading-tight ${featured ? 'text-white' : 'text-indigo-900'}`}>
-        {tip.headline}
-      </p>
-      <p className={`text-xs font-semibold leading-snug ${featured ? 'text-white/80' : 'text-indigo-400'}`}>
-        {tip.description}
-      </p>
-      {featured && (
-        <span className="text-[10px] font-extrabold text-white/60 uppercase tracking-widest mt-auto">
-          Tip of the day
-        </span>
-      )}
-    </div>
-  );
-}
+/* ─── Capture tips — stacked card deck ───────────────────────────────────── */
 
 function CaptureTipsStrip() {
-  const featured = CAPTURE_TIPS[new Date().getDate() % CAPTURE_TIPS.length];
-  const rest     = CAPTURE_TIPS.filter((t) => t.id !== featured.id);
-  const ordered  = [featured, ...rest];
+  const n = CAPTURE_TIPS.length;
+  const [currentIdx, setCurrentIdx] = useState(new Date().getDate() % n);
+  const [exiting,    setExiting]    = useState(false);
+  const interacted = useRef(false);
+
+  function next() {
+    if (exiting) return;
+    interacted.current = true;
+    setExiting(true);
+    setTimeout(() => {
+      setCurrentIdx((i) => (i + 1) % n);
+      setExiting(false);
+    }, 290);
+  }
+
+  const tip  = CAPTURE_TIPS[currentIdx];
+  const Icon = TIP_ICONS[tip.icon] ?? Camera;
+
   return (
-    <div className="mb-5">
-      <div className="flex items-center justify-between mb-2.5">
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest">Capture tips</p>
-        <span className="text-[10px] font-bold text-indigo-300">{CAPTURE_TIPS.length} tips</span>
+        <span className="text-[10px] font-bold text-indigo-300">{currentIdx + 1} of {n}</span>
       </div>
-      <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-1 px-1 pb-2">
-        {ordered.map((tip, i) => (
-          <CaptureTipCard key={tip.id} tip={tip} featured={i === 0} />
-        ))}
+
+      {/* Stack wrapper — fixed height holds all three card layers */}
+      <div className="relative cursor-pointer select-none" style={{ height: 184 }} onClick={next}>
+
+        {/* Back card */}
+        <div
+          className="absolute inset-x-0 rounded-3xl bg-rose-100"
+          style={{ top: 10, bottom: 0, transform: 'rotate(3.5deg) translateX(4px)' }}
+        />
+
+        {/* Middle card */}
+        <div
+          className="absolute inset-x-0 rounded-3xl bg-rose-300"
+          style={{ top: 5, bottom: 0, transform: 'rotate(-2deg) translateX(-2px)' }}
+        />
+
+        {/* Front card — exits on click, enters on index change */}
+        <div
+          key={currentIdx}
+          className={`absolute inset-x-0 top-0 bottom-0 rounded-3xl bg-rose-500 shadow-xl shadow-rose-200 p-5 flex flex-col gap-2 ${
+            exiting
+              ? 'animate-card-exit'
+              : interacted.current
+                ? 'animate-card-enter'
+                : ''
+          }`}
+        >
+          <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <Icon size={20} className="text-white" />
+          </div>
+          <p className="font-black text-white text-lg leading-tight">{tip.headline}</p>
+          <p className="text-white/80 font-semibold text-sm leading-snug flex-1">{tip.description}</p>
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-white/50 text-[10px] font-extrabold uppercase tracking-widest">Tap to shuffle</span>
+            <span className="text-white/40 text-[10px] font-bold">{currentIdx + 1} / {n}</span>
+          </div>
+        </div>
       </div>
     </div>
   );

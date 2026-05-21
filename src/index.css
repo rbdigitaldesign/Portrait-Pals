@@ -53,6 +53,18 @@ button img,
   animation: slide-up 0.35s ease-out both;
 }
 
+/* Stacked tip card — exit (swipe right) and enter (scale up) */
+@keyframes card-exit {
+  from { transform: translateX(0)    rotate(0deg);  opacity: 1; }
+  to   { transform: translateX(115%) rotate(14deg); opacity: 0; }
+}
+@keyframes card-enter {
+  from { transform: translateX(-24px) scale(0.93); opacity: 0; }
+  to   { transform: translateX(0)     scale(1);    opacity: 1; }
+}
+.animate-card-exit  { animation: card-exit  0.29s cubic-bezier(0.4, 0, 0.9, 0.6) both; }
+.animate-card-enter { animation: card-enter 0.22s ease-out both; }
+
 /* Safe-area padding helpers */
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
