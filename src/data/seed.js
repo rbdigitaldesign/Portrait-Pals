@@ -1,5 +1,5 @@
 // Bump this string whenever seed portraits or children change.
-export const SEED_VERSION = 'v10';
+export const SEED_VERSION = 'v11';
 
 export const ROOMS = [
   { id: "baby-toddler", name: "Baby/Toddler Room" },
@@ -177,6 +177,66 @@ export const SEED_PORTRAITS = [
     photoUrl: "/images/jake-maggie-cuddle-carpet.jpg",
     source: "school",
     eventTag: "milestone",
+    pendingConsent: [],
+  },
+  {
+    id: "ps1",
+    taggedIds: ["c5", "c21"],
+    date: "2026-03-14",
+    notes: "Bubble day in the yard — Maggie and Lily were completely lost in it, trying to blow the biggest bubbles they could manage.",
+    photoUrl: "/images/pexels-antonius-ferret-5278821.jpg",
+    source: "school",
+    eventTag: "special",
+    pendingConsent: [],
+  },
+  {
+    id: "ps2",
+    taggedIds: ["c5", "c21"],
+    date: "2026-03-14",
+    notes: "Total concentration — these two were in a bubble competition all of their own.",
+    photoUrl: "/images/pexels-antonius-ferret-5275841.jpg",
+    source: "school",
+    eventTag: "special",
+    pendingConsent: [],
+  },
+  {
+    id: "ps3",
+    taggedIds: ["c5", "c21"],
+    date: "2026-04-02",
+    notes: "Caught this moment at pack-up time. The two of them just dissolved into laughter and we're not sure why — classic.",
+    photoUrl: "/images/pexels-antonius-ferret-5278985.jpg",
+    source: "school",
+    eventTag: null,
+    pendingConsent: [],
+  },
+  {
+    id: "ps4",
+    taggedIds: ["c5", "c21", "c23"],
+    date: "2026-04-22",
+    notes: "Charlotte found the sticker collection and within about 30 seconds Maggie and Lily had pulled up a spot on the court to help sort through them.",
+    photoUrl: "/images/pexels-antonius-ferret-5275351.jpg",
+    source: "school",
+    eventTag: null,
+    pendingConsent: [],
+  },
+  {
+    id: "ps5",
+    taggedIds: ["c5", "c21", "c23"],
+    date: "2026-05-08",
+    notes: "Sports morning on the court — Lily sprinted ahead but Maggie and Charlotte weren't far behind.",
+    photoUrl: "/images/pexels-antonius-ferret-5275809.jpg",
+    source: "school",
+    eventTag: "excursion",
+    pendingConsent: [],
+  },
+  {
+    id: "ps6",
+    taggedIds: ["c5", "c21", "c23"],
+    date: "2026-05-08",
+    notes: "Three girls, zero cares — this was taken about two seconds before they all piled into each other.",
+    photoUrl: "/images/pexels-antonius-ferret-5275836.jpg",
+    source: "school",
+    eventTag: "excursion",
     pendingConsent: [],
   },
 ];
