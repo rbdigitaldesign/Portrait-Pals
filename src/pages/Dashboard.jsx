@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2, Shield, Bell, Clock, Check, ArrowRight, GraduationCap, Cake, MapPin, Star, PartyPopper, Home, Sun, Heart, Frame, Users2, CheckCircle, ArrowDown, Sparkles, Smile } from 'lucide-react';
+import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2, Shield, Bell, Clock, Check, ArrowRight, GraduationCap, Cake, MapPin, Star, PartyPopper, Home, Sun, Heart, Frame, Users2, CheckCircle, ArrowDown, Sparkles, Smile, Info } from 'lucide-react';
 
 const EVENT_TAG_ICONS = { Cake, MapPin, Star, PartyPopper, Home };
 function EventTagIcon({ tag, size = 10, className = '' }) {
@@ -1291,6 +1291,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
   const [editingChild,    setEditingChild]    = useState(null);
   const [roomToast,       setRoomToast]       = useState(null);
   const [activeTab,       setActiveTab]       = useState('capture');
+  const [showTipsModal,   setShowTipsModal]   = useState(false);
   const migrationRan = useRef(false);
 
   // Auto room progression on first mount
@@ -1420,19 +1421,28 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
         {/* ── Tab 1: Capture ── */}
         {activeTab === 'capture' && (
           <div className="flex flex-col justify-between" style={{ minHeight: 'calc(100svh - 160px)' }}>
-            {/* Capture tips strip */}
-            <CaptureTipsStrip />
 
-            {/* Circular capture CTA — below the tips */}
+            {/* (i) tips trigger — top right */}
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowTipsModal(true)}
+                className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm text-indigo-300 active:scale-90 transition-transform"
+                aria-label="Photography tips"
+              >
+                <Info size={17} />
+              </button>
+            </div>
+
+            {/* Circular capture CTA */}
             <div className="flex flex-col items-center">
               <button
                 onClick={() => navigate('/capture')}
-                className="w-48 h-48 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform border-4 border-white"
-                style={{ background: 'linear-gradient(135deg, #47b3ec, #39a6e8)', boxShadow: '0 20px 40px #39a6e840' }}
+                className="w-64 h-64 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform border-4 border-white"
+                style={{ background: 'linear-gradient(135deg, #47b3ec, #39a6e8)', boxShadow: '0 24px 60px #39a6e850' }}
               >
-                <Camera size={56} className="text-white" />
+                <Camera size={80} className="text-white" />
               </button>
-              <p className="text-sm font-black text-indigo-900 mt-2">Capture Portrait</p>
+              <p className="text-base font-black text-indigo-900 mt-3">Capture Portrait</p>
             </div>
 
             {/* Quick stats */}
@@ -1618,6 +1628,29 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
           onClose={() => setEditingChild(null)}
           onSave={(updates) => { updateChild(editingChild.id, updates); setEditingChild(null); }}
         />
+      )}
+
+      {/* Tips modal */}
+      {showTipsModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-indigo-950/80 backdrop-blur-md"
+          onClick={() => setShowTipsModal(false)}
+        >
+          <div className="w-full max-w-sm px-6" onClick={(e) => e.stopPropagation()}>
+            {/* Header row */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-white/50 text-xs font-extrabold uppercase tracking-widest">Photography Tips</p>
+              <button
+                onClick={() => setShowTipsModal(false)}
+                className="w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white active:scale-90 transition-transform"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <CaptureTipsStrip />
+            <p className="text-center text-white/30 text-xs font-semibold mt-4">Tap outside to close</p>
+          </div>
+        </div>
       )}
     </div>
   );
