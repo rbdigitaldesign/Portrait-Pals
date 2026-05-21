@@ -44,6 +44,15 @@ button img,
   pointer-events: none;
 }
 
+/* Slide-up animation for capture tip interstitial */
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.animate-slide-up {
+  animation: slide-up 0.35s ease-out both;
+}
+
 /* Safe-area padding helpers */
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);

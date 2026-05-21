@@ -1,11 +1,53 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, RotateCcw, Check, Upload, SwitchCamera, X, Ban, Users, Smile, Cake, MapPin, Star, PartyPopper, Home } from 'lucide-react';
+import { ArrowLeft, Camera, RotateCcw, Check, Upload, SwitchCamera, X, Ban, Users, Smile, Cake, MapPin, Star, PartyPopper, Home, Sun, ArrowDown, Heart, Frame, Users2, CheckCircle, Sparkles, Shield } from 'lucide-react';
 
 const EVENT_TAG_ICONS = { Cake, MapPin, Star, PartyPopper, Home };
 function EventTagIcon({ tag, size = 11 }) {
   const Icon = EVENT_TAG_ICONS[tag?.icon];
   return Icon ? <Icon size={size} /> : null;
+}
+
+const CAPTURE_TIPS = [
+  { id: 'side-by-side', icon: 'Users',        headline: 'Side by side',            description: 'Position children shoulder-to-shoulder so both faces are clearly visible in the frame.' },
+  { id: 'eye-level',    icon: 'ArrowDown',     headline: 'Get down to their level', description: 'Crouch so the camera is at eye height — it transforms a snapshot into a real connection.' },
+  { id: 'lighting',     icon: 'Sun',           headline: 'Chase the light',         description: 'Face children toward a window or outdoor light source to avoid harsh shadows across their faces.' },
+  { id: 'candid',       icon: 'Sparkles',      headline: 'Capture the candid',      description: 'Wait a beat after the posed smile fades — genuine laughs make the most memorable portraits.' },
+  { id: 'connection',   icon: 'Heart',         headline: 'Show the connection',     description: 'A hand on a shoulder or a shared look tells a richer story than posed faces alone.' },
+  { id: 'distance',     icon: 'Shield',        headline: 'Respectful distance',     description: 'Use zoom rather than crowding children — they\'re more natural when you\'re not too close.' },
+  { id: 'background',   icon: 'Frame',         headline: 'Clean the background',    description: 'A simple background keeps families\' attention on the children, not the surroundings.' },
+  { id: 'smile',        icon: 'Smile',         headline: 'Big smiles on cue',       description: 'Ask for their "special smile" — then snap the moment right after they start giggling.' },
+  { id: 'group',        icon: 'Users2',        headline: 'Small groups are best',   description: 'Two or three children creates intimacy. Larger groups are harder to keep in focus.' },
+  { id: 'consent',      icon: 'CheckCircle',   headline: 'Consent first, always',   description: 'Check the coloured dots before saving — teal means approved, amber means pending.' },
+];
+const TIP_ICONS = { Users, Users2, Sun, Heart, Frame, Smile, Shield, CheckCircle, ArrowDown, Sparkles, Camera };
+
+function CaptureSessionTip({ tip, onDismiss }) {
+  const Icon = TIP_ICONS[tip.icon] ?? Camera;
+  return (
+    <div className="fixed inset-x-4 bottom-32 z-40 animate-slide-up">
+      <div className="bg-indigo-900/95 backdrop-blur-sm rounded-3xl px-5 py-5 shadow-2xl">
+        <div className="flex items-start gap-4">
+          <div className="w-11 h-11 bg-rose-500 rounded-2xl flex items-center justify-center flex-shrink-0">
+            <Icon size={20} className="text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-extrabold text-rose-400 uppercase tracking-widest mb-1">
+              Tip of the session
+            </p>
+            <p className="font-black text-white text-base leading-tight">{tip.headline}</p>
+            <p className="text-indigo-300 font-semibold text-xs mt-1 leading-snug">{tip.description}</p>
+          </div>
+        </div>
+        <button
+          onClick={onDismiss}
+          className="w-full mt-4 bg-rose-500 text-white font-black rounded-2xl py-3.5 active:scale-95 transition-transform flex items-center justify-center gap-2"
+        >
+          <Check size={16} /> Got it — let's go!
+        </button>
+      </div>
+    </div>
+  );
 }
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -114,22 +156,29 @@ function DuoSilhouette() {
 /* ─── Framing rule badges ─────────────────────────────────────────────── */
 
 const TIPS = [
-  { icon: Users,  label: 'Side by side'    },
-  { icon: Camera, label: 'Face the camera' },
-  { icon: Smile,  label: 'Big smiles'      },
+  { icon: Users,     label: 'Side by side'    },
+  { icon: Camera,    label: 'Face the camera' },
+  { icon: Smile,     label: 'Big smiles'      },
 ];
 
 function FramingRules() {
+  const [activeIdx, setActiveIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setActiveIdx((i) => (i + 1) % TIPS.length), 3000);
+    return () => clearInterval(t);
+  }, []);
   return (
     <div className="absolute top-4 left-0 right-0 px-4">
       <p className="text-center text-white/55 text-[10px] font-extrabold uppercase tracking-widest mb-2">
         Framing suggestions
       </p>
       <div className="flex justify-center gap-1.5 flex-wrap">
-        {TIPS.map(({ icon: Icon, label }) => (
+        {TIPS.map(({ icon: Icon, label }, i) => (
           <span
             key={label}
-            className="bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-[11px] font-bold flex items-center gap-1.5"
+            className={`backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-[11px] font-bold flex items-center gap-1.5 transition-all ${
+              i === activeIdx ? 'bg-rose-500/80 scale-105' : 'bg-black/40'
+            }`}
           >
             <Icon size={12} />{label}
           </span>
@@ -158,16 +207,33 @@ export default function Capture() {
   const streamRef                         = useRef(null);
   const fileInputRef                      = useRef(null);
 
-  const [facingMode,   setFacingMode]   = useState('environment');
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraError,  setCameraError]  = useState(null);
-  const [captured,     setCaptured]     = useState(null);
-  const [selectedIds,  setSelectedIds]  = useState([]);
-  const [notes,        setNotes]        = useState('');
-  const [eventTag,     setEventTag]     = useState(null);
-  const [saving,        setSaving]        = useState(false);
-  const [saved,         setSaved]         = useState(false);
-  const [declinedToast, setDeclinedToast] = useState('');
+  const [facingMode,          setFacingMode]          = useState('environment');
+  const [cameraActive,        setCameraActive]        = useState(false);
+  const [cameraError,         setCameraError]         = useState(null);
+  const [captured,            setCaptured]            = useState(null);
+  const [selectedIds,         setSelectedIds]         = useState([]);
+  const [notes,               setNotes]               = useState('');
+  const [eventTag,            setEventTag]            = useState(null);
+  const [saving,              setSaving]              = useState(false);
+  const [saved,               setSaved]               = useState(false);
+  const [declinedToast,       setDeclinedToast]       = useState('');
+  const [showTipInterstitial, setShowTipInterstitial] = useState(
+    () => sessionStorage.getItem('pp_capture_tip_shown') !== '1'
+  );
+
+  const sessionTip = CAPTURE_TIPS[new Date().getDate() % CAPTURE_TIPS.length];
+
+  function dismissTipInterstitial() {
+    sessionStorage.setItem('pp_capture_tip_shown', '1');
+    setShowTipInterstitial(false);
+  }
+
+  useEffect(() => {
+    if (!showTipInterstitial) return;
+    const t = setTimeout(dismissTipInterstitial, 4000);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showTipInterstitial]);
 
   /* ── Camera lifecycle ── */
 
@@ -301,6 +367,11 @@ export default function Capture() {
 
   return (
     <div className="h-dvh bg-indigo-950 flex flex-col overflow-hidden">
+
+      {/* ── Capture tip interstitial (once per session) ── */}
+      {!captured && showTipInterstitial && (
+        <CaptureSessionTip tip={sessionTip} onDismiss={dismissTipInterstitial} />
+      )}
 
       {/* ── Declined child floating toast ── */}
       {declinedToast && (

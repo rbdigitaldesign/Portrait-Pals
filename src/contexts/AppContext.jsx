@@ -84,6 +84,11 @@ export function AppProvider({ children }) {
 
   const updateChild = useCallback((childId, updates) => {
     setChildrenList((prev) => {
+      const child = prev.find((c) => c.id === childId);
+      // Detect and specifically log room changes with from/to detail
+      if (child && updates.roomId && updates.roomId !== child.roomId) {
+        writeAudit('ROOM_CHANGED', `${child.name}: ${child.roomId} → ${updates.roomId}`);
+      }
       const next = prev.map((c) => c.id === childId ? { ...c, ...updates } : c);
       localStorage.setItem(CHILDREN_KEY, JSON.stringify(next));
       return next;

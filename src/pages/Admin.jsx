@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Download, Mail, Clock, RotateCcw } from 'lucide-react';
+import { LogOut, Download, Mail, Clock, RotateCcw, ArrowRight, DoorOpen } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
+import { ROOMS } from '../data/seed';
 
 const AUDIT_KEY = 'pp_audit_log';
 
 const ACTION_STYLES = {
-  LOGIN:            'bg-blue-50    text-blue-700',
-  LOGOUT:           'bg-indigo-50  text-indigo-600',
-  ADD_PORTRAIT:     'bg-teal-50    text-teal-700',
-  DELETE_PORTRAIT:  'bg-rose-50    text-rose-700',
-  UPDATE_CHILD:     'bg-amber-50   text-amber-700',
-  DOWNLOAD_PHOTO:   'bg-purple-50  text-purple-700',
-  CONSENT_GRANTED:      'bg-green-50   text-green-700',
-  CONSENT_DECLINED:     'bg-orange-50  text-orange-700',
-  PORTRAIT_REINSTATED:  'bg-violet-50  text-violet-700',
+  LOGIN:               'bg-blue-50    text-blue-700',
+  LOGOUT:              'bg-indigo-50  text-indigo-600',
+  ADD_PORTRAIT:        'bg-teal-50    text-teal-700',
+  DELETE_PORTRAIT:     'bg-rose-50    text-rose-700',
+  UPDATE_CHILD:        'bg-amber-50   text-amber-700',
+  ROOM_CHANGED:        'bg-sky-50     text-sky-700',
+  DOWNLOAD_PHOTO:      'bg-purple-50  text-purple-700',
+  CONSENT_GRANTED:     'bg-green-50   text-green-700',
+  CONSENT_DECLINED:    'bg-orange-50  text-orange-700',
+  PORTRAIT_REINSTATED: 'bg-violet-50  text-violet-700',
 };
 
 const CONSENT_STATUS_STYLE = {
@@ -268,6 +270,79 @@ function DeclinedPhotosPanel({ portraits, children, onReinstate }) {
   );
 }
 
+/* ─── Room Changes Panel ─────────────────────────────────────────────── */
+
+function roomLabel(id) {
+  return ROOMS.find((r) => r.id === id)?.label ?? id;
+}
+
+function RoomChangesPanel({ rawLog }) {
+  const changes = rawLog
+    .filter((e) => e.action === 'ROOM_CHANGED')
+    .sort((a, b) => new Date(b.ts) - new Date(a.ts));
+
+  return (
+    <div className="bg-white rounded-3xl shadow-md shadow-indigo-100 overflow-hidden">
+      <div className="px-5 pt-5 pb-4 border-b border-sky-100 flex items-center justify-between">
+        <div>
+          <h2 className="font-black text-indigo-900 text-base flex items-center gap-2">
+            <DoorOpen size={16} className="text-sky-500" /> Room Changes
+          </h2>
+          <p className="text-xs font-semibold text-indigo-400 mt-0.5">
+            Children who have moved rooms, with dates
+          </p>
+        </div>
+        {changes.length > 0 && (
+          <span className="bg-sky-500 text-white font-black text-sm w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0">
+            {changes.length}
+          </span>
+        )}
+      </div>
+
+      {changes.length === 0 ? (
+        <p className="text-sm font-semibold text-indigo-300 px-5 py-5">No room changes recorded yet</p>
+      ) : (
+        <div className="divide-y divide-sky-50">
+          {changes.map((entry, i) => {
+            // Detail format: "Child Name: from-room-id → to-room-id"
+            const colonIdx = entry.detail.indexOf(': ');
+            const childName = colonIdx > -1 ? entry.detail.slice(0, colonIdx) : entry.detail;
+            const roomPart  = colonIdx > -1 ? entry.detail.slice(colonIdx + 2) : '';
+            const [fromId, toId] = roomPart.split(' → ');
+            return (
+              <div key={i} className="flex items-center gap-4 px-5 py-3.5">
+                <div className="w-9 h-9 bg-sky-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <DoorOpen size={16} className="text-sky-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-black text-indigo-900 text-sm">{childName}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    <span className="bg-indigo-100 text-indigo-600 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                      {roomLabel(fromId)}
+                    </span>
+                    <ArrowRight size={11} className="text-indigo-300 flex-shrink-0" />
+                    <span className="bg-sky-100 text-sky-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                      {roomLabel(toId)}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-[10px] font-semibold text-indigo-300">
+                    {new Date(entry.ts).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                  <p className="text-[10px] font-semibold text-indigo-200 mt-0.5">
+                    {new Date(entry.ts).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Admin page ──────────────────────────────────────────────────────── */
 
 export default function Admin() {
@@ -363,6 +438,9 @@ export default function Admin() {
           children={children}
           onReinstate={reinstatePortrait}
         />
+
+        {/* Room change history */}
+        <RoomChangesPanel rawLog={rawLog} />
 
         {/* Filters + CSV download */}
         <div className="bg-white rounded-3xl p-5 shadow-md shadow-indigo-100">
