@@ -562,31 +562,26 @@ function CaptureTipsStrip() {
   const Icon = TIP_ICONS[tip.icon] ?? Camera;
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest">Capture tips</p>
-        <span className="text-[10px] font-bold text-indigo-300">{currentIdx + 1} of {n}</span>
-      </div>
-
-      {/* Stack wrapper — fixed height holds all three card layers */}
-      <div className="relative cursor-pointer select-none" style={{ height: 190 }} onClick={next}>
+    <div className="mb-2">
+      {/* Stack wrapper */}
+      <div className="relative cursor-pointer select-none" style={{ height: 128 }} onClick={next}>
 
         {/* Back card */}
         <div
           className="absolute inset-x-0 rounded-3xl bg-indigo-200"
-          style={{ top: 10, bottom: 0, transform: 'rotate(3.5deg) translateX(4px)' }}
+          style={{ top: 8, bottom: 0, transform: 'rotate(3.5deg) translateX(4px)' }}
         />
 
         {/* Middle card */}
         <div
           className="absolute inset-x-0 rounded-3xl bg-indigo-400"
-          style={{ top: 5, bottom: 0, transform: 'rotate(-2deg) translateX(-2px)' }}
+          style={{ top: 4, bottom: 0, transform: 'rotate(-2deg) translateX(-2px)' }}
         />
 
-        {/* Front card — exits on click, enters on index change */}
+        {/* Front card */}
         <div
           key={currentIdx}
-          className={`absolute inset-x-0 top-0 bottom-0 rounded-3xl bg-indigo-900 shadow-xl shadow-indigo-200 px-5 py-4 flex flex-col gap-1.5 ${
+          className={`absolute inset-x-0 top-0 bottom-0 rounded-3xl bg-indigo-900 shadow-xl shadow-indigo-200 px-4 py-3 flex flex-col gap-1 ${
             exiting
               ? 'animate-card-exit'
               : interacted.current
@@ -594,14 +589,14 @@ function CaptureTipsStrip() {
                 : ''
           }`}
         >
-          <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <Icon size={20} className="text-white" />
+          <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Icon size={16} className="text-white" />
           </div>
-          <p className="font-black text-white text-lg leading-tight">{tip.headline}</p>
-          <p className="text-white/80 font-semibold text-sm leading-snug flex-1">{tip.description}</p>
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-white/50 text-[10px] font-extrabold uppercase tracking-widest">Tap to shuffle</span>
-            <span className="text-white/40 text-[10px] font-bold">{currentIdx + 1} / {n}</span>
+          <p className="font-black text-white text-base leading-tight">{tip.headline}</p>
+          <p className="text-white/75 font-semibold text-xs leading-snug flex-1 line-clamp-2">{tip.description}</p>
+          <div className="flex items-center justify-between">
+            <span className="text-white/40 text-[10px] font-extrabold uppercase tracking-widest">Tap to shuffle</span>
+            <span className="text-white/35 text-[10px] font-bold">{currentIdx + 1} / {n}</span>
           </div>
         </div>
       </div>
@@ -611,14 +606,14 @@ function CaptureTipsStrip() {
 
 function QuickStats({ portraitsThisWeek, childrenPhotographedToday }) {
   return (
-    <div className="grid grid-cols-2 gap-3 mb-5">
-      <div className="bg-white rounded-3xl px-4 py-4 shadow-md shadow-indigo-100 text-center">
-        <p className="font-black text-2xl text-indigo-900">{portraitsThisWeek}</p>
+    <div className="grid grid-cols-2 gap-3 mb-2">
+      <div className="bg-white rounded-3xl px-4 py-2 shadow-md shadow-indigo-100 text-center">
+        <p className="font-black text-xl text-indigo-900">{portraitsThisWeek}</p>
         <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">portraits this week</p>
       </div>
-      <div className="bg-white rounded-3xl px-4 py-4 shadow-md shadow-indigo-100 text-center">
-        <p className="font-black text-2xl text-indigo-900">{childrenPhotographedToday}</p>
-        <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">children photographed today</p>
+      <div className="bg-white rounded-3xl px-4 py-2 shadow-md shadow-indigo-100 text-center">
+        <p className="font-black text-xl text-indigo-900">{childrenPhotographedToday}</p>
+        <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">children today</p>
       </div>
     </div>
   );
@@ -1429,15 +1424,15 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
             <CaptureTipsStrip />
 
             {/* Circular capture CTA — below the tips */}
-            <div className="flex flex-col items-center mb-6">
+            <div className="flex flex-col items-center mb-2">
               <button
                 onClick={() => navigate('/capture')}
-                className="w-44 h-44 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform border-4 border-white"
+                className="w-48 h-48 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform border-4 border-white"
                 style={{ background: 'linear-gradient(135deg, #47b3ec, #39a6e8)', boxShadow: '0 20px 40px #39a6e840' }}
               >
-                <Camera size={52} className="text-white" />
+                <Camera size={56} className="text-white" />
               </button>
-              <p className="text-sm font-black text-indigo-900 mt-3">Capture Portrait</p>
+              <p className="text-sm font-black text-indigo-900 mt-1">Capture Portrait</p>
             </div>
 
             {/* Quick stats */}
@@ -1447,7 +1442,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
             />
 
             {/* Compact room filter */}
-            <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 mb-3 pb-1">
+            <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 mb-1 pb-1">
               {['all', ...rooms.map((r) => r.id)].map((roomId) => {
                 const label = roomId === 'all' ? 'All' : rooms.find((r) => r.id === roomId)?.name ?? roomId;
                 return (
@@ -1474,7 +1469,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
               );
               if (declined.length === 0) {
                 return (
-                  <div className="bg-teal-50 rounded-2xl px-4 py-3 mb-5 flex items-center gap-2.5">
+                  <div className="bg-teal-50 rounded-2xl px-4 py-2.5 mb-2 flex items-center gap-2.5">
                     <CheckCircle size={14} className="text-teal-500 flex-shrink-0" />
                     <p className="text-xs font-semibold text-teal-700">
                       {selectedRoom === 'all' ? 'All children' : 'All children in this room'} are available to photograph.
@@ -1483,8 +1478,8 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
                 );
               }
               return (
-                <div className="mb-5">
-                  <div className="flex items-center gap-2 mb-1.5">
+                <div className="mb-2">
+                  <div className="flex items-center gap-2 mb-1">
                     <p className="text-xs font-extrabold text-rose-500 uppercase tracking-widest">
                       Cannot be photographed
                     </p>
@@ -1492,7 +1487,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
                       {declined.length}
                     </span>
                   </div>
-                  <p className="text-[10px] font-semibold text-rose-400 mb-2.5 leading-snug">
+                  <p className="text-[10px] font-semibold text-rose-400 mb-1.5 leading-snug">
                     These children have opted out — do not include them in photos.
                   </p>
                   <div className="flex gap-4 overflow-x-auto scrollbar-none -mx-1 px-1 pt-2 pb-3">
