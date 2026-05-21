@@ -1,5 +1,5 @@
 // Bump this string whenever seed portraits or children change.
-export const SEED_VERSION = 'v12';
+export const SEED_VERSION = 'v13';
 
 export const ROOMS = [
   { id: "baby-toddler", name: "Baby/Toddler Room" },
@@ -32,20 +32,20 @@ export const EVENT_TAGS = [
 
 export const CHILDREN = [
   // ── Baby / Toddler Room ──────────────────────────────────────────────────
-  { id: "c8",  name: "Jake",      roomId: "baby-toddler", consentStatus: "approved", parentEmail: "siblings@parent.com", autoApproveTagging: true,  birthdate: "2022-06-01" },
-  { id: "c10", name: "Billy",     roomId: "baby-toddler", consentStatus: "approved", parentEmail: "siblings@parent.com", autoApproveTagging: true  },
+  { id: "c8",  name: "Jake",      roomId: "baby-toddler", consentStatus: "approved", parentEmail: "siblings@parent.com", autoApproveTagging: true,  birthdate: "2022-06-01", photoUrl: "/images/Jake.jpg" },
+  { id: "c10", name: "Billy",     roomId: "baby-toddler", consentStatus: "approved", parentEmail: "siblings@parent.com", autoApproveTagging: true,                             photoUrl: "/images/Billy.jpg" },
 
   // ── Pre-Kindy ─────────────────────────────────────────────────────────────
-  { id: "c5",  name: "Maggie",    roomId: "pre-kindy",    consentStatus: "approved", parentEmail: "maggie@parent.com",   autoApproveTagging: false, birthdate: "2023-07-09" },
-  { id: "c20", name: "Noah",      roomId: "pre-kindy",    consentStatus: "approved", parentEmail: "demo@parent.com",     autoApproveTagging: false, birthdate: "2024-08-10" },
-  { id: "c21", name: "Lily",      roomId: "pre-kindy",    consentStatus: "approved", parentEmail: "lily@parent.com",     autoApproveTagging: false, birthdate: "2024-05-22" },
-  { id: "c23", name: "Charlotte", roomId: "pre-kindy",    consentStatus: "approved", parentEmail: "charlotte@parent.com",autoApproveTagging: true,  birthdate: "2024-02-08" },
-  { id: "c25", name: "Zoe",       roomId: "pre-kindy",    consentStatus: "declined", parentEmail: "zoe@parent.com",     autoApproveTagging: false, birthdate: "2024-07-01" },
+  { id: "c5",  name: "Maggie",    roomId: "pre-kindy",    consentStatus: "approved", parentEmail: "maggie@parent.com",   autoApproveTagging: false, birthdate: "2023-07-09",  photoUrl: "/images/maggie-profile.jpg" },
+  { id: "c20", name: "Noah",      roomId: "pre-kindy",    consentStatus: "approved", parentEmail: "demo@parent.com",     autoApproveTagging: false, birthdate: "2024-08-10",  photoUrl: "/images/Noah.jpg" },
+  { id: "c21", name: "Lily",      roomId: "pre-kindy",    consentStatus: "approved", parentEmail: "lily@parent.com",     autoApproveTagging: false, birthdate: "2024-05-22",  photoUrl: "/images/Lily.jpg" },
+  { id: "c23", name: "Charlotte", roomId: "pre-kindy",    consentStatus: "approved", parentEmail: "charlotte@parent.com",autoApproveTagging: true,  birthdate: "2024-02-08",  photoUrl: "/images/Charlotte.jpg" },
+  { id: "c25", name: "Zoe",       roomId: "pre-kindy",    consentStatus: "declined", parentEmail: "zoe@parent.com",      autoApproveTagging: false, birthdate: "2024-07-01",  photoUrl: "/images/Zoe.jpg" },
 
   // ── Kindy Room ────────────────────────────────────────────────────────────
-  { id: "c36", name: "Emma",      roomId: "kindy",        consentStatus: "approved", parentEmail: "emma@parent.com",    autoApproveTagging: false, birthdate: "2023-05-12" },
-  { id: "c40", name: "Olivia",    roomId: "kindy",        consentStatus: "approved", parentEmail: "olivia@parent.com",  autoApproveTagging: true,  birthdate: "2022-12-20" },
-  { id: "c41", name: "William",   roomId: "kindy",        consentStatus: "pending",  parentEmail: "william@parent.com", autoApproveTagging: false, birthdate: "2023-04-10" },
+  { id: "c36", name: "Emma",      roomId: "kindy",        consentStatus: "approved", parentEmail: "emma@parent.com",    autoApproveTagging: false, birthdate: "2023-05-12",   photoUrl: "/images/Emma.jpg" },
+  { id: "c40", name: "Olivia",    roomId: "kindy",        consentStatus: "approved", parentEmail: "olivia@parent.com",  autoApproveTagging: true,  birthdate: "2022-12-20",   photoUrl: "/images/Olivia.jpg" },
+  { id: "c41", name: "William",   roomId: "kindy",        consentStatus: "pending",  parentEmail: "william@parent.com", autoApproveTagging: false, birthdate: "2023-04-10",   photoUrl: "/images/William.jpg" },
 ];
 
 export const ACCOUNTS = {
