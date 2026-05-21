@@ -1,5 +1,5 @@
 // Bump this string whenever seed portraits or children change.
-export const SEED_VERSION = 'v16';
+export const SEED_VERSION = 'v17';
 
 export const ROOMS = [
   { id: "baby-toddler", name: "Baby/Toddler Room" },
@@ -93,16 +93,6 @@ export const SEED_PORTRAITS = [
     date: "2026-03-14",
     notes: "Bubble day in the yard — Maggie and Lily were completely lost in it, trying to blow the biggest bubbles they could manage.",
     photoUrl: "/images/pexels-antonius-ferret-5278821.jpg",
-    source: "school",
-    eventTag: "special",
-    pendingConsent: [],
-  },
-  {
-    id: "ps2",
-    taggedIds: ["c5", "c21"],
-    date: "2026-03-14",
-    notes: "Total concentration — these two were in a bubble competition all of their own.",
-    photoUrl: "/images/pexels-antonius-ferret-5275841.jpg",
     source: "school",
     eventTag: "special",
     pendingConsent: [],
