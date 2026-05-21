@@ -1432,7 +1432,8 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
             <div className="flex flex-col items-center mb-6">
               <button
                 onClick={() => navigate('/capture')}
-                className="w-44 h-44 bg-rose-500 rounded-full flex items-center justify-center shadow-2xl shadow-rose-200 active:scale-90 transition-transform border-4 border-white"
+                className="w-44 h-44 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform border-4 border-white"
+                style={{ background: 'linear-gradient(135deg, #47b3ec, #39a6e8)', boxShadow: '0 20px 40px #39a6e840' }}
               >
                 <Camera size={52} className="text-white" />
               </button>
