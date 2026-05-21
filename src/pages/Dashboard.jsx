@@ -1425,17 +1425,19 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
         {/* ── Tab 1: Capture ── */}
         {activeTab === 'capture' && (
           <div>
-            {/* Hero CTA */}
-            <button
-              onClick={() => navigate('/capture')}
-              className="w-full bg-rose-500 text-white font-black text-xl rounded-3xl py-6 flex items-center justify-center gap-3 shadow-2xl shadow-rose-200 active:scale-95 transition-transform mt-4 mb-5"
-            >
-              <Camera size={26} />
-              Capture Portrait
-            </button>
-
-            {/* Capture tips strip — directly under the button */}
+            {/* Capture tips strip */}
             <CaptureTipsStrip />
+
+            {/* Circular capture CTA — below the tips */}
+            <div className="flex flex-col items-center mb-6">
+              <button
+                onClick={() => navigate('/capture')}
+                className="w-24 h-24 bg-rose-500 rounded-full flex items-center justify-center shadow-2xl shadow-rose-200 active:scale-90 transition-transform border-4 border-white"
+              >
+                <Camera size={32} className="text-white" />
+              </button>
+              <p className="text-sm font-black text-indigo-900 mt-3">Capture Portrait</p>
+            </div>
 
             {/* Quick stats */}
             <QuickStats
