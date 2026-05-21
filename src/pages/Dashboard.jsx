@@ -1419,12 +1419,12 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
 
         {/* ── Tab 1: Capture ── */}
         {activeTab === 'capture' && (
-          <div>
+          <div className="flex flex-col justify-between" style={{ minHeight: 'calc(100svh - 160px)' }}>
             {/* Capture tips strip */}
             <CaptureTipsStrip />
 
             {/* Circular capture CTA — below the tips */}
-            <div className="flex flex-col items-center mb-3">
+            <div className="flex flex-col items-center">
               <button
                 onClick={() => navigate('/capture')}
                 className="w-48 h-48 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform border-4 border-white"
@@ -1441,6 +1441,8 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
               childrenPhotographedToday={childrenPhotographedToday}
             />
 
+            {/* Compact room filter + declined section grouped */}
+            <div>
             {/* Compact room filter */}
             <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 mb-2 pb-1">
               {['all', ...rooms.map((r) => r.id)].map((roomId) => {
@@ -1505,6 +1507,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
                 </div>
               );
             })()}
+            </div>{/* end room+declined group */}
           </div>
         )}
 
