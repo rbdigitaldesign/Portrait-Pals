@@ -569,7 +569,7 @@ function CaptureTipsStrip() {
       </div>
 
       {/* Stack wrapper — fixed height holds all three card layers */}
-      <div className="relative cursor-pointer select-none" style={{ height: 184 }} onClick={next}>
+      <div className="relative cursor-pointer select-none" style={{ height: 158 }} onClick={next}>
 
         {/* Back card */}
         <div
@@ -1432,9 +1432,9 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
             <div className="flex flex-col items-center mb-6">
               <button
                 onClick={() => navigate('/capture')}
-                className="w-36 h-36 bg-rose-500 rounded-full flex items-center justify-center shadow-2xl shadow-rose-200 active:scale-90 transition-transform border-4 border-white"
+                className="w-44 h-44 bg-rose-500 rounded-full flex items-center justify-center shadow-2xl shadow-rose-200 active:scale-90 transition-transform border-4 border-white"
               >
-                <Camera size={44} className="text-white" />
+                <Camera size={52} className="text-white" />
               </button>
               <p className="text-sm font-black text-indigo-900 mt-3">Capture Portrait</p>
             </div>
