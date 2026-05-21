@@ -564,7 +564,7 @@ function CaptureTipsStrip() {
   return (
     <div className="mb-2">
       {/* Stack wrapper */}
-      <div className="relative cursor-pointer select-none" style={{ height: 128 }} onClick={next}>
+      <div className="relative cursor-pointer select-none" style={{ height: 140 }} onClick={next}>
 
         {/* Back card */}
         <div
@@ -606,12 +606,12 @@ function CaptureTipsStrip() {
 
 function QuickStats({ portraitsThisWeek, childrenPhotographedToday }) {
   return (
-    <div className="grid grid-cols-2 gap-3 mb-2">
-      <div className="bg-white rounded-3xl px-4 py-2 shadow-md shadow-indigo-100 text-center">
+    <div className="grid grid-cols-2 gap-3 mb-3">
+      <div className="bg-white rounded-3xl px-4 py-3 shadow-md shadow-indigo-100 text-center">
         <p className="font-black text-xl text-indigo-900">{portraitsThisWeek}</p>
         <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">portraits this week</p>
       </div>
-      <div className="bg-white rounded-3xl px-4 py-2 shadow-md shadow-indigo-100 text-center">
+      <div className="bg-white rounded-3xl px-4 py-3 shadow-md shadow-indigo-100 text-center">
         <p className="font-black text-xl text-indigo-900">{childrenPhotographedToday}</p>
         <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">children today</p>
       </div>
@@ -1424,7 +1424,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
             <CaptureTipsStrip />
 
             {/* Circular capture CTA — below the tips */}
-            <div className="flex flex-col items-center mb-2">
+            <div className="flex flex-col items-center mb-3">
               <button
                 onClick={() => navigate('/capture')}
                 className="w-48 h-48 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform border-4 border-white"
@@ -1432,7 +1432,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
               >
                 <Camera size={56} className="text-white" />
               </button>
-              <p className="text-sm font-black text-indigo-900 mt-1">Capture Portrait</p>
+              <p className="text-sm font-black text-indigo-900 mt-2">Capture Portrait</p>
             </div>
 
             {/* Quick stats */}
@@ -1442,7 +1442,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
             />
 
             {/* Compact room filter */}
-            <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 mb-1 pb-1">
+            <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 mb-2 pb-1">
               {['all', ...rooms.map((r) => r.id)].map((roomId) => {
                 const label = roomId === 'all' ? 'All' : rooms.find((r) => r.id === roomId)?.name ?? roomId;
                 return (
@@ -1469,7 +1469,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
               );
               if (declined.length === 0) {
                 return (
-                  <div className="bg-teal-50 rounded-2xl px-4 py-2.5 mb-2 flex items-center gap-2.5">
+                  <div className="bg-teal-50 rounded-2xl px-4 py-3 mb-3 flex items-center gap-2.5">
                     <CheckCircle size={14} className="text-teal-500 flex-shrink-0" />
                     <p className="text-xs font-semibold text-teal-700">
                       {selectedRoom === 'all' ? 'All children' : 'All children in this room'} are available to photograph.
@@ -1478,8 +1478,8 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
                 );
               }
               return (
-                <div className="mb-2">
-                  <div className="flex items-center gap-2 mb-1">
+                <div className="mb-3">
+                  <div className="flex items-center gap-2 mb-1.5">
                     <p className="text-xs font-extrabold text-rose-500 uppercase tracking-widest">
                       Cannot be photographed
                     </p>
@@ -1487,7 +1487,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
                       {declined.length}
                     </span>
                   </div>
-                  <p className="text-[10px] font-semibold text-rose-400 mb-1.5 leading-snug">
+                  <p className="text-[10px] font-semibold text-rose-400 mb-2 leading-snug">
                     These children have opted out — do not include them in photos.
                   </p>
                   <div className="flex gap-4 overflow-x-auto scrollbar-none -mx-1 px-1 pt-2 pb-3">
