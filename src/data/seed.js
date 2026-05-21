@@ -1,5 +1,5 @@
 // Bump this string whenever seed portraits or children change.
-export const SEED_VERSION = 'v14';
+export const SEED_VERSION = 'v15';
 
 export const ROOMS = [
   { id: "baby-toddler", name: "Baby/Toddler Room" },
@@ -175,6 +175,46 @@ export const SEED_PORTRAITS = [
     photoUrl: "/images/Zoe and Noah-2.jpg",
     source: "school",
     eventTag: null,
+    pendingConsent: [],
+  },
+  {
+    id: "ps10",
+    taggedIds: ["c23", "c40"],
+    date: "2026-03-20",
+    notes: "Charlotte and Olivia both spotted the truck at exactly the same moment — neither was willing to let go.",
+    photoUrl: "/images/Charlotte and Olivia.jpg",
+    source: "school",
+    eventTag: null,
+    pendingConsent: [],
+  },
+  {
+    id: "ps11",
+    taggedIds: ["c41", "c20"],
+    date: "2026-04-10",
+    notes: "William and Noah side by side on the rug, completely absorbed sorting through the game pieces together.",
+    photoUrl: "/images/William and Noah.jpg",
+    source: "school",
+    eventTag: null,
+    pendingConsent: [],
+  },
+  {
+    id: "ps12",
+    taggedIds: ["c36", "c10"],
+    date: "2026-05-02",
+    notes: "Outdoor play in the sandpit — Emma came with a plan, Billy came to supervise.",
+    photoUrl: "/images/Emma and Billy.jpg",
+    source: "school",
+    eventTag: null,
+    pendingConsent: [],
+  },
+  {
+    id: "ps13",
+    taggedIds: ["c8", "c5"],
+    date: "2026-04-05",
+    notes: "Dress-up Friday — Jake chose the penguin, Maggie went full giraffe. They spent the whole session at the table like this.",
+    photoUrl: "/images/Jake and Maggie.jpg",
+    source: "school",
+    eventTag: "special",
     pendingConsent: [],
   },
 ];
