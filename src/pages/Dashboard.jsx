@@ -1472,7 +1472,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
                   <p className="text-[10px] font-semibold text-rose-400 mb-2.5 leading-snug">
                     These children have opted out — do not include them in photos.
                   </p>
-                  <div className="flex gap-4 overflow-x-auto scrollbar-none -mx-1 px-1 pb-2">
+                  <div className="flex gap-4 overflow-x-auto scrollbar-none -mx-1 px-1 pt-2 pb-3">
                     {declined.map((child) => (
                       <ChildChip
                         key={child.id}
