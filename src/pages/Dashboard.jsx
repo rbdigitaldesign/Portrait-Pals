@@ -569,7 +569,7 @@ function CaptureTipsStrip() {
       </div>
 
       {/* Stack wrapper — fixed height holds all three card layers */}
-      <div className="relative cursor-pointer select-none" style={{ height: 158 }} onClick={next}>
+      <div className="relative cursor-pointer select-none" style={{ height: 190 }} onClick={next}>
 
         {/* Back card */}
         <div
@@ -586,7 +586,7 @@ function CaptureTipsStrip() {
         {/* Front card — exits on click, enters on index change */}
         <div
           key={currentIdx}
-          className={`absolute inset-x-0 top-0 bottom-0 rounded-3xl bg-indigo-900 shadow-xl shadow-indigo-200 p-5 flex flex-col gap-2 ${
+          className={`absolute inset-x-0 top-0 bottom-0 rounded-3xl bg-indigo-900 shadow-xl shadow-indigo-200 px-5 py-4 flex flex-col gap-1.5 ${
             exiting
               ? 'animate-card-exit'
               : interacted.current
