@@ -568,20 +568,20 @@ function CaptureTipsStrip() {
 
         {/* Back card */}
         <div
-          className="absolute inset-x-0 rounded-3xl bg-indigo-200"
-          style={{ top: 8, bottom: 0, transform: 'rotate(3.5deg) translateX(4px)' }}
+          className="absolute inset-x-0 rounded-3xl"
+          style={{ top: 10, bottom: -4, transform: 'rotate(3deg) translateX(5px)', background: '#2d2f5e' }}
         />
 
         {/* Middle card */}
         <div
-          className="absolute inset-x-0 rounded-3xl bg-indigo-400"
-          style={{ top: 4, bottom: 0, transform: 'rotate(-2deg) translateX(-2px)' }}
+          className="absolute inset-x-0 rounded-3xl"
+          style={{ top: 5, bottom: -2, transform: 'rotate(-1.5deg) translateX(-3px)', background: '#353777' }}
         />
 
         {/* Front card */}
         <div
           key={currentIdx}
-          className={`absolute inset-x-0 top-0 bottom-0 rounded-3xl bg-indigo-900 shadow-xl shadow-indigo-200 px-4 py-3 flex flex-col gap-1 ${
+          className={`absolute inset-x-0 top-0 bottom-0 rounded-3xl bg-indigo-900 shadow-lg px-4 py-3 flex flex-col gap-1 ${
             exiting
               ? 'animate-card-exit'
               : interacted.current
@@ -1714,7 +1714,7 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
       {/* Tips modal */}
       {showTipsModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-indigo-950/80 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
           onClick={() => setShowTipsModal(false)}
         >
           <div className="w-full max-w-sm px-6" onClick={(e) => e.stopPropagation()}>
