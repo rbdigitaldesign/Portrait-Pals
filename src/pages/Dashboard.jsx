@@ -609,11 +609,11 @@ function QuickStats({ portraitsThisWeek, childrenPhotographedToday }) {
     <div className="grid grid-cols-2 gap-3 mb-3">
       <div className="bg-white rounded-3xl px-4 py-3 shadow-md shadow-indigo-100 text-center">
         <p className="font-black text-xl text-indigo-900">{portraitsThisWeek}</p>
-        <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">portraits this week</p>
+        <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">portraits captured this week</p>
       </div>
       <div className="bg-white rounded-3xl px-4 py-3 shadow-md shadow-indigo-100 text-center">
         <p className="font-black text-xl text-indigo-900">{childrenPhotographedToday}</p>
-        <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">children today</p>
+        <p className="text-[11px] font-bold text-indigo-400 mt-0.5 leading-tight">children photographed today</p>
       </div>
     </div>
   );
@@ -799,9 +799,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
   const [selectedEventTag,  setSelectedEventTag]  = useState(null);
   const [showAddChild,      setShowAddChild]      = useState(false);
   const [editingChild,      setEditingChild]      = useState(null);
-  const [privacyDismissed,  setPrivacyDismissed]  = useState(
-    () => sessionStorage.getItem('pp_privacy_banner') === '1'
-  );
+  const [privacyDismissed,  setPrivacyDismissed]  = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   const myChildIds = user.childIds ?? [];
@@ -866,10 +864,10 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
     setSelectedFriendId((prev) => (prev === id ? null : id));
   }
 
-  function dismissPrivacyBanner() {
-    sessionStorage.setItem('pp_privacy_banner', '1');
-    setPrivacyDismissed(true);
-  }
+  useEffect(() => {
+    const t = setTimeout(() => setPrivacyDismissed(true), 10000);
+    return () => clearTimeout(t);
+  }, []);
 
   if (!activeChild) {
     return (
@@ -887,16 +885,13 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
 
       {/* ── Header ── */}
       <div className="bg-white shadow-md shadow-indigo-100 px-5 pt-safe pt-4 pb-5 sticky top-0 z-20 rounded-b-3xl">
-        {/* Privacy info strip */}
+        {/* Privacy info strip — auto-dismisses after 10s */}
         {!privacyDismissed && (
-          <div className="flex items-center gap-2 bg-teal-50 rounded-2xl px-3 py-2.5 mb-3">
+          <div className="flex items-center gap-2 bg-teal-50 rounded-2xl px-3 py-2.5 mb-3 animate-slide-up">
             <Shield size={14} className="text-teal-500 flex-shrink-0" />
             <p className="text-xs font-semibold text-teal-700 flex-1 leading-snug">
-              Photos shared only within Portrait Pals — never on social media.
+              Photos taken within Portrait Pals are never shared on social media.
             </p>
-            <button onClick={dismissPrivacyBanner} className="text-teal-400 flex-shrink-0 p-0.5">
-              <X size={14} />
-            </button>
           </div>
         )}
 
@@ -1292,6 +1287,8 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
   const [roomToast,       setRoomToast]       = useState(null);
   const [activeTab,       setActiveTab]       = useState('capture');
   const [showTipsModal,   setShowTipsModal]   = useState(false);
+  const [showEduNotifs,   setShowEduNotifs]   = useState(false);
+  const [eduNotifs,       setEduNotifs]       = useState([]);
   const migrationRan = useRef(false);
 
   // Auto room progression on first mount
@@ -1309,8 +1306,10 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
       }
     });
     if (count > 0) {
-      setRoomToast(count);
-      setTimeout(() => setRoomToast(null), 5000);
+      const msg = `${count} ${count === 1 ? 'child has' : 'children have'} moved to a new room based on their age`;
+      setRoomToast(msg);
+      setEduNotifs((prev) => [{ id: Date.now(), text: msg, read: false }, ...prev]);
+      setTimeout(() => setRoomToast(null), 6000);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1370,10 +1369,15 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
 
       {/* Room migration toast */}
       {roomToast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-          <div className="bg-indigo-900 text-white rounded-2xl px-5 py-3 shadow-2xl text-sm font-bold flex items-center gap-2">
-            <ArrowRight size={15} className="flex-shrink-0" />
-            {roomToast} {roomToast === 1 ? 'child has' : 'children have'} been moved to a new room based on their birthdate
+        <div className="fixed top-4 inset-x-4 z-50 pointer-events-none animate-slide-up max-w-sm mx-auto">
+          <div className="bg-white rounded-3xl px-5 py-4 shadow-2xl shadow-indigo-200 flex items-start gap-3 border border-indigo-100">
+            <div className="w-10 h-10 bg-indigo-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+              <GraduationCap size={20} className="text-indigo-600" />
+            </div>
+            <div>
+              <p className="font-black text-indigo-900 text-sm leading-tight">Room update</p>
+              <p className="text-indigo-500 text-xs font-semibold mt-0.5 leading-snug">{roomToast}</p>
+            </div>
           </div>
         </div>
       )}
@@ -1385,13 +1389,49 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
             <h1 className="text-2xl font-black text-indigo-900 leading-tight">Portrait Pals</h1>
             <p className="text-xs font-extrabold text-rose-500 uppercase tracking-widest mt-0.5">Educator View</p>
           </div>
-          <button
-            onClick={logout}
-            className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center text-indigo-400 active:scale-90 transition-transform"
-            aria-label="Sign out"
-          >
-            <LogOut size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Notification bell */}
+            <div className="relative">
+              <button
+                onClick={() => { setShowEduNotifs((v) => !v); setEduNotifs((n) => n.map((x) => ({ ...x, read: true }))); }}
+                className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center text-indigo-400 active:scale-90 transition-transform"
+                aria-label="Notifications"
+              >
+                <Bell size={18} />
+              </button>
+              {eduNotifs.some((n) => !n.read) && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full flex items-center justify-center text-white text-[9px] font-black">
+                  {eduNotifs.filter((n) => !n.read).length}
+                </span>
+              )}
+              {showEduNotifs && (
+                <div className="absolute right-0 top-12 w-72 bg-white rounded-3xl shadow-2xl shadow-indigo-200 border border-indigo-50 overflow-hidden z-30">
+                  <div className="px-4 py-3 border-b border-indigo-50">
+                    <p className="font-black text-indigo-900 text-sm">Notifications</p>
+                  </div>
+                  {eduNotifs.length === 0 ? (
+                    <p className="text-indigo-400 text-xs font-semibold px-4 py-4">No notifications yet.</p>
+                  ) : (
+                    eduNotifs.map((n) => (
+                      <div key={n.id} className="flex items-start gap-3 px-4 py-3 border-b border-indigo-50 last:border-0">
+                        <div className="w-8 h-8 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <GraduationCap size={14} className="text-indigo-600" />
+                        </div>
+                        <p className="text-xs font-semibold text-indigo-600 leading-snug">{n.text}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={logout}
+              className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center text-indigo-400 active:scale-90 transition-transform"
+              aria-label="Sign out"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
