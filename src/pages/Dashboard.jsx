@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2, Shield, Bell, Clock, Check, ArrowRight, GraduationCap, Cake, MapPin, Star, PartyPopper, Home, Sun, Heart, Frame, Users2, CheckCircle, ArrowDown, Sparkles, Smile, Info } from 'lucide-react';
+import { Camera, LogOut, Plus, X, Users, Play, Pencil, Trash2, Shield, Bell, Clock, Check, ArrowRight, GraduationCap, Cake, MapPin, Star, PartyPopper, Home, Sun, Heart, Frame, Users2, CheckCircle, ArrowDown, Sparkles, Smile, Info, UserRound } from 'lucide-react';
 
 const EVENT_TAG_ICONS = { Cake, MapPin, Star, PartyPopper, Home };
 function EventTagIcon({ tag, size = 10, className = '' }) {
@@ -252,7 +252,7 @@ function ChildChip({ child, active, onClick, onLongPress }) {
         >
           {child.photoUrl
             ? <img src={child.photoUrl} alt={child.name} className="w-full h-full object-cover" />
-            : initials(child.name)}
+            : <UserRound size={26} className="text-indigo-300" />}
         </div>
         {/* Pencil badge */}
         <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full shadow flex items-center justify-center">
@@ -340,7 +340,7 @@ function EditChildModal({ child, rooms, onClose, onSave, userRole }) {
               >
                 {preview
                   ? <img src={preview} alt={name} className="w-full h-full object-cover" />
-                  : <span className="font-black text-2xl text-indigo-300">{initials(name)}</span>}
+                  : <UserRound size={36} className="text-indigo-300" />}
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
                   <Pencil size={18} className="text-white" />
                 </div>
@@ -1015,8 +1015,8 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
             {avatarUrl ? (
               <img src={avatarUrl} alt={activeChild.name} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center font-black text-2xl text-indigo-300">
-                {initials(activeChild.name)}
+              <div className="w-full h-full flex items-center justify-center">
+                <UserRound size={40} className="text-indigo-300" />
               </div>
             )}
           </div>
@@ -1082,7 +1082,7 @@ function ParentTimeline({ user, portraits, childrenList, logout, addChild, addCh
                     }`}>
                       {friend.photoUrl
                         ? <img src={friend.photoUrl} alt={friend.name} className="w-full h-full object-cover" />
-                        : initials(friend.name)}
+                        : <UserRound size={26} className="text-indigo-300" />}
                     </div>
                     <span className={`text-xs font-bold w-16 text-center leading-tight ${active ? 'text-teal-600' : 'text-indigo-500'}`}>
                       {friend.name}
