@@ -228,13 +228,6 @@ export default function Capture() {
     setShowTipInterstitial(false);
   }
 
-  useEffect(() => {
-    if (!showTipInterstitial) return;
-    const t = setTimeout(dismissTipInterstitial, 4000);
-    return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showTipInterstitial]);
-
   /* ── Camera lifecycle ── */
 
   const stopCamera = useCallback(() => {
