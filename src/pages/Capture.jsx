@@ -226,6 +226,7 @@ export default function Capture() {
   const [cameraError,         setCameraError]         = useState(null);
   const [captured,            setCaptured]            = useState(null);
   const [selectedIds,         setSelectedIds]         = useState([]);
+  const [childSearch,         setChildSearch]         = useState('');
   const [notes,               setNotes]               = useState('');
   const [eventTag,            setEventTag]            = useState(null);
   const [saving,              setSaving]              = useState(false);
@@ -532,8 +533,18 @@ export default function Capture() {
                 <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
                   Who's in this photo?
                 </p>
+                <input
+                  type="text"
+                  value={childSearch}
+                  onChange={(e) => setChildSearch(e.target.value)}
+                  placeholder="Search children…"
+                  className="w-full mb-2.5 px-3 py-2 rounded-xl bg-white border border-indigo-100 text-sm font-semibold text-indigo-900 placeholder:text-indigo-300 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                />
                 <div className="grid grid-cols-2 gap-1.5">
-                  {[...childrenList].sort((a, b) => a.name.localeCompare(b.name)).map((child) => {
+                  {[...childrenList]
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .filter((child) => child.name.toLowerCase().includes(childSearch.toLowerCase()))
+                    .map((child) => {
                     const checked    = selectedIds.includes(child.id);
                     const status     = child.consentStatus ?? 'approved';
                     const info       = CONSENT_INFO[status] ?? CONSENT_INFO.approved;
