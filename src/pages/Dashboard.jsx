@@ -1368,20 +1368,6 @@ function EducatorDashboard({ user, portraits, childrenList, rooms, addChild, upd
     <div className="min-h-screen bg-amber-50 pb-8">
 
       {/* Room migration toast */}
-      {roomToast && (
-        <div className="fixed top-4 inset-x-4 z-50 pointer-events-none animate-slide-up max-w-sm mx-auto">
-          <div className="bg-white rounded-3xl px-5 py-4 shadow-2xl shadow-indigo-200 flex items-start gap-3 border border-indigo-100">
-            <div className="w-10 h-10 bg-indigo-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-              <GraduationCap size={20} className="text-indigo-600" />
-            </div>
-            <div>
-              <p className="font-black text-indigo-900 text-sm leading-tight">Room update</p>
-              <p className="text-indigo-500 text-xs font-semibold mt-0.5 leading-snug">{roomToast}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="bg-white shadow-md shadow-indigo-100 px-5 pt-safe pt-4 pb-5 sticky top-0 z-20 rounded-b-3xl">
         <div className="flex items-center justify-between max-w-2xl mx-auto">

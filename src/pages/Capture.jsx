@@ -39,9 +39,23 @@ function CaptureSessionTip({ tip, onDismiss }) {
             <p className="text-indigo-300 font-semibold text-xs mt-1 leading-snug">{tip.description}</p>
           </div>
         </div>
+        <div className="mt-4 bg-indigo-800/60 rounded-2xl px-4 py-3 flex items-center justify-around">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-teal-400 flex-shrink-0" />
+            <span className="text-xs font-bold text-indigo-200">Approved</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 flex-shrink-0" />
+            <span className="text-xs font-bold text-indigo-200">Pending</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-400 flex-shrink-0" />
+            <span className="text-xs font-bold text-indigo-200">Declined</span>
+          </div>
+        </div>
         <button
           onClick={onDismiss}
-          className="w-full mt-4 bg-rose-500 text-white font-black rounded-2xl py-3.5 active:scale-95 transition-transform flex items-center justify-center gap-2"
+          className="w-full mt-3 bg-rose-500 text-white font-black rounded-2xl py-3.5 active:scale-95 transition-transform flex items-center justify-center gap-2"
         >
           <Check size={16} /> Got it — let's go!
         </button>
@@ -212,6 +226,7 @@ export default function Capture() {
   const [cameraError,         setCameraError]         = useState(null);
   const [captured,            setCaptured]            = useState(null);
   const [selectedIds,         setSelectedIds]         = useState([]);
+  const [childSearch,         setChildSearch]         = useState('');
   const [notes,               setNotes]               = useState('');
   const [eventTag,            setEventTag]            = useState(null);
   const [saving,              setSaving]              = useState(false);
@@ -518,8 +533,18 @@ export default function Capture() {
                 <p className="text-xs font-extrabold text-indigo-400 uppercase tracking-widest mb-2">
                   Who's in this photo?
                 </p>
+                <input
+                  type="text"
+                  value={childSearch}
+                  onChange={(e) => setChildSearch(e.target.value)}
+                  placeholder="Search children…"
+                  className="w-full mb-2.5 px-3 py-2 rounded-xl bg-white border border-indigo-100 text-sm font-semibold text-indigo-900 placeholder:text-indigo-300 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                />
                 <div className="grid grid-cols-2 gap-1.5">
-                  {[...childrenList].sort((a, b) => a.name.localeCompare(b.name)).map((child) => {
+                  {[...childrenList]
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .filter((child) => child.name.toLowerCase().includes(childSearch.toLowerCase()))
+                    .map((child) => {
                     const checked    = selectedIds.includes(child.id);
                     const status     = child.consentStatus ?? 'approved';
                     const info       = CONSENT_INFO[status] ?? CONSENT_INFO.approved;
